@@ -170,9 +170,11 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
         }
 
         // Actualizar derechos de enroque
-        updateCastlingRights(piece, fromRow, fromCol);
+        updateCastlingRights(piece, fromRow, fromCol, tempCastlingRights);
 
         if (!isSimulation) {
+            enPassant = tempEnPassant;
+            castlingRights = tempCastlingRights;
             updateBoard();
             saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, moveNotation);
             postMoveActions();
@@ -220,19 +222,19 @@ function postMoveActions() {
 }
 
 // Función para actualizar los derechos de enroque
-function updateCastlingRights(piece, row, col) {
+function updateCastlingRights(piece, row, col, tempCastlingRights = castlingRights) {
     if (piece === 'K') {
-        castlingRights.white.short = false;
-        castlingRights.white.long = false;
+        tempCastlingRights.white.short = false;
+        tempCastlingRights.white.long = false;
     } else if (piece === 'k') {
-        castlingRights.black.short = false;
-        castlingRights.black.long = false;
+        tempCastlingRights.black.short = false;
+        tempCastlingRights.black.long = false;
     } else if (piece === 'R') {
-        if (row === 7 && col === 7) castlingRights.white.short = false;
-        if (row === 7 && col === 0) castlingRights.white.long = false;
+        if (row === 7 && col === 7) tempCastlingRights.white.short = false;
+        if (row === 7 && col === 0) tempCastlingRights.white.long = false;
     } else if (piece === 'r') {
-        if (row === 0 && col === 7) castlingRights.black.short = false;
-        if (row === 0 && col === 0) castlingRights.black.long = false;
+        if (row === 0 && col === 7) tempCastlingRights.black.short = false;
+        if (row === 0 && col === 0) tempCastlingRights.black.long = false;
     }
 }
 
@@ -351,7 +353,7 @@ function getBestMove(color, depth) {
         const tempEnPassant = enPassant ? { ...enPassant } : null;
         const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
 
-        movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true);
+        movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
 
         const score = minimax(depth - 1, -Infinity, Infinity, color === 'white' ? false : true);
 
@@ -398,7 +400,7 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
             const tempEnPassant = enPassant ? { ...enPassant } : null;
             const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
 
-            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true);
+            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
 
             const eval = minimax(depth - 1, alpha, beta, false);
 
@@ -418,7 +420,9 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
             const tempEnPassant = enPassant ? { ...enPassant } : null;
             const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
 
-            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true);
+            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
+
+            const eval = minimax(depth - 1, alpha, beta, true);
 
             board = tempBoard;
             enPassant = tempEnPassant;

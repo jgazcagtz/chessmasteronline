@@ -32,9 +32,10 @@ let promotionCallback = null;
 
 // Mapear las piezas a códigos Unicode
 const pieces = {
-    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♚', 'k': '♛', 'p': '♟',
-    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♚', 'K': '♛', 'P': '♙'
+    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',  // Black pieces
+    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'   // White pieces
 };
+
 
 const promotionPieces = {
     'white': ['Q', 'R', 'B', 'N'],

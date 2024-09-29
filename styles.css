@@ -1,0 +1,165 @@
+body {
+    background-color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    margin: 20px 0;
+    color: #333;
+}
+
+#game-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+#current-player, #timer, #difficulty {
+    margin: 0 10px;
+    font-size: 18px;
+}
+
+#new-game-btn {
+    margin-left: 10px;
+    padding: 5px 15px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#game {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(8, 12.5%);
+    width: 80vmin;
+    height: 80vmin;
+    border: 5px solid #333;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.square {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: background-color 0.3s;
+}
+
+.light {
+    background-color: #f0d9b5;
+}
+
+.dark {
+    background-color: #b58863;
+}
+
+.piece {
+    font-size: calc(8vmin);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1;
+    transition: transform 0.2s;
+}
+
+.piece:hover {
+    transform: scale(1.1);
+}
+
+.selected {
+    outline: 3px solid #ff0000;
+}
+
+.highlight {
+    background-color: rgba(255, 255, 0, 0.5);
+}
+
+.check {
+    animation: check-alert 1s infinite;
+}
+
+@keyframes check-alert {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(255, 0, 0, 0.5); }
+    100% { background-color: transparent; }
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+}
+
+#promotion-options {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.promotion-piece {
+    font-size: 50px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.promotion-piece:hover {
+    transform: scale(1.2);
+}
+
+#move-history {
+    margin-left: 20px;
+    max-width: 200px;
+    text-align: left;
+}
+
+#move-history h2 {
+    font-size: 20px;
+}
+
+#history-list {
+    list-style-type: decimal;
+    padding-left: 20px;
+}
+
+@media (max-width: 800px) {
+    #game {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    #move-history {
+        margin-left: 0;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    #board {
+        width: 90vmin;
+        height: 90vmin;
+    }
+}

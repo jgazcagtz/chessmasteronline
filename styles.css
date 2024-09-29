@@ -1,57 +1,84 @@
+/* General body styling */
 body {
-    background-color: #f0f0f0;
+    background-color: #f4f4f9; /* Softer background */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: center;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensures content covers full height of the screen */
 }
 
+/* Title styling */
 h1 {
-    margin: 20px 0;
+    margin: 40px 0;
     color: #333;
+    font-size: 36px;
+    letter-spacing: 1.5px;
+    font-weight: 700;
 }
 
+/* Game info section */
 #game-info {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 20px; /* More space between game info and board */
     flex-wrap: wrap;
 }
 
 #current-player, #timer, #difficulty {
-    margin: 0 10px;
+    margin: 0 15px;
     font-size: 18px;
 }
 
 #new-game-btn {
-    margin-left: 10px;
-    padding: 5px 15px;
+    margin-left: 15px;
+    padding: 8px 20px;
     font-size: 16px;
     cursor: pointer;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
+#new-game-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Game section */
 #game {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     flex-wrap: wrap;
+    margin-bottom: 40px; /* Ensures enough separation from the footer */
 }
 
+/* Chessboard */
 #board {
     display: grid;
-    grid-template-columns: repeat(8, 12.5%);
+    grid-template-columns: repeat(8, 1fr); /* Ensures equal column width */
+    grid-template-rows: repeat(8, 1fr);    /* Ensures equal row height */
     width: 80vmin;
     height: 80vmin;
     border: 5px solid #333;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Modern shadow */
+    margin-bottom: 40px; /* Separation from move history or other content */
 }
 
 .square {
     width: 100%;
     height: 100%;
     position: relative;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.square:hover {
+    transform: scale(1.05); /* Subtle zoom effect on hover */
 }
 
 .light {
@@ -62,20 +89,32 @@ h1 {
     background-color: #b58863;
 }
 
+/* Chess pieces */
 .piece {
     font-size: calc(8vmin);
     cursor: pointer;
     user-select: none;
     line-height: 1;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.3s ease;
 }
 
 .piece:hover {
-    transform: scale(1.1);
+    transform: scale(1.1); /* Enlarge pieces on hover */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Hover shadow for pieces */
 }
 
 .selected {
     outline: 3px solid #ff0000;
+    animation: selection-pulse 0.5s infinite alternate;
+}
+
+@keyframes selection-pulse {
+    from {
+        outline-color: #ff0000;
+    }
+    to {
+        outline-color: #ff8080;
+    }
 }
 
 .highlight {
@@ -92,6 +131,7 @@ h1 {
     100% { background-color: transparent; }
 }
 
+/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -114,6 +154,7 @@ h1 {
     text-align: center;
 }
 
+/* Promotion options */
 #promotion-options {
     display: flex;
     justify-content: space-around;
@@ -130,6 +171,7 @@ h1 {
     transform: scale(1.2);
 }
 
+/* Move history */
 #move-history {
     margin-left: 20px;
     max-width: 200px;
@@ -145,6 +187,19 @@ h1 {
     padding-left: 20px;
 }
 
+/* Footer */
+footer {
+    background-color: #333;
+    color: #fff;
+    padding: 10px 0;
+    text-align: center;
+    position: relative;
+    width: 100%;
+    font-size: 14px;
+    margin-top: auto; /* Ensures it sticks to the bottom only if necessary */
+}
+
+/* Media queries for responsiveness */
 @media (max-width: 800px) {
     #game {
         flex-direction: column;

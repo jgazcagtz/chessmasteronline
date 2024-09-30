@@ -100,7 +100,6 @@ function selectPiece(e) {
             movePiece(selectedPiece.row, selectedPiece.col, row, col);
             selectedPiece = null;
             clearHighlights();
-            // Turn management is now handled in postMoveActions()
         } else {
             selectedPiece = null;
             clearHighlights();
@@ -113,7 +112,11 @@ function selectPiece(e) {
 }
 
 // Función para mover piezas
-function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
+function movePiece(fromRow, fromCol, toRow, toCol, isSimulation, tempEnPassant, tempCastlingRights) {
+    if (isSimulation === undefined) isSimulation = false;
+    if (tempEnPassant === undefined) tempEnPassant = enPassant;
+    if (tempCastlingRights === undefined) tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+
     const piece = board[fromRow][fromCol];
     const targetPiece = board[toRow][toCol];
     let moveNotation = '';
@@ -125,7 +128,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
         performCastling(currentPlayer, side);
         moveNotation = side === 'short' ? 'O-O' : 'O-O-O';
 
-        // Update castling rights after castling
+        // Actualizar derechos de enroque
         updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights);
 
         if (!isSimulation) {
@@ -157,7 +160,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
             tempEnPassant = null;
         }
 
-        // Update castling rights before moving the piece
+        // Actualizar derechos de enroque
         updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights);
 
         board[toRow][toCol] = piece;
@@ -204,15 +207,16 @@ function postMoveActions() {
     } else if (isInCheck(opponentColor())) {
         checkSound.play();
         highlightKing(opponentColor());
+    } else {
+        clearKingHighlight();
     }
 
     // Verificar tablas
-    // Update repetition positions
-    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
+    // Actualizar posiciones repetidas
+    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}_${getCastlingRightsString(castlingRights)}`;
     repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
 
     if (isThreefoldRepetition()) {
-        // Ask the user if they want to claim the draw
         const claimDraw = confirm('Se ha repetido la misma posición tres veces. ¿Desea reclamar tablas por repetición?');
         if (claimDraw) {
             alert('¡Empate por repetición de posición tres veces!');
@@ -242,8 +246,8 @@ function postMoveActions() {
 }
 
 // Función para actualizar los derechos de enroque
-function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights = castlingRights) {
-    // Update castling rights when moving own king or rook
+function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights) {
+    // Actualizar derechos de enroque al mover el rey o la torre
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
         tempCastlingRights.white.long = false;
@@ -258,7 +262,7 @@ function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlin
         if (fromRow === 0 && fromCol === 0) tempCastlingRights.black.long = false;
     }
 
-    // Update castling rights when opponent's rook is captured
+    // Actualizar derechos de enroque al capturar una torre
     if (toRow !== undefined && toCol !== undefined) {
         const targetPiece = board[toRow][toCol];
         if (targetPiece === 'R') {
@@ -338,8 +342,8 @@ function computerMove() {
 
     currentPlayerElement.textContent = 'Blanco';
 
-    // Update repetition positions
-    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
+    // Actualizar posiciones repetidas
+    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}_${getCastlingRightsString(castlingRights)}`;
     repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
 
     if (isThreefoldRepetition()) {
@@ -357,6 +361,8 @@ function computerMove() {
     } else if (isInCheck('white')) {
         checkSound.play();
         highlightKing('white');
+    } else {
+        clearKingHighlight();
     }
 
     // Verificar tablas
@@ -477,13 +483,13 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
 // Función para evaluar el tablero
 function evaluateBoard() {
     const pieceValues = {
-        'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': -1000,
-        'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 1000
+        'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': 0,
+        'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0
     };
     let total = 0;
     for (let row of board) {
         for (let piece of row) {
-            if (piece && pieceValues[piece]) {
+            if (piece && pieceValues[piece] !== undefined) {
                 total += pieceValues[piece];
             }
         }
@@ -509,7 +515,12 @@ function getAllLegalMoves(color) {
 }
 
 // Función para obtener movimientos legales de una pieza
-function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
+function getLegalMoves(row, col, playerColor, skipChecks, tempBoard, tempEnPassant, tempCastlingRights) {
+    if (skipChecks === undefined) skipChecks = false;
+    if (tempBoard === undefined) tempBoard = board;
+    if (tempEnPassant === undefined) tempEnPassant = enPassant;
+    if (tempCastlingRights === undefined) tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+
     const piece = tempBoard[row][col];
     const moves = [];
 
@@ -614,7 +625,7 @@ function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = bo
         });
     }
 
-    // Filtrar movimientos que dejan al rey en jaque, si skipChecks es falso
+    // Filtrar movimientos que dejan al rey en jaque
     if (!skipChecks) {
         return moves.filter(move => !leavesKingInCheck(row, col, move[0], move[1], playerColor, tempBoard, tempEnPassant, tempCastlingRights));
     } else {
@@ -623,11 +634,11 @@ function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = bo
 }
 
 // Funciones auxiliares para movimientos
-function isEmpty(row, col, tempBoard = board) {
+function isEmpty(row, col, tempBoard) {
     return isOnBoard(row, col) && tempBoard[row][col] === '';
 }
 
-function isEnemy(row, col, isWhite, tempBoard = board) {
+function isEnemy(row, col, isWhite, tempBoard) {
     if (!isOnBoard(row, col) || tempBoard[row][col] === '') return false;
     const piece = tempBoard[row][col];
     return isWhite ? piece === piece.toLowerCase() : piece === piece.toUpperCase();
@@ -637,7 +648,7 @@ function isOnBoard(row, col) {
     return row >= 0 && row < 8 && col >= 0 && col < 8;
 }
 
-function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
+function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoard, tempEnPassant, tempCastlingRights) {
     const simulatedBoard = JSON.parse(JSON.stringify(tempBoard));
     let simulatedEnPassant = tempEnPassant ? { ...tempEnPassant } : null;
     let simulatedCastlingRights = JSON.parse(JSON.stringify(tempCastlingRights));
@@ -674,7 +685,7 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
 }
 
 function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
-    // Update castling rights when moving own king or rook
+    // Actualizar derechos de enroque al mover el rey o la torre
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
         tempCastlingRights.white.long = false;
@@ -689,7 +700,7 @@ function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, t
         if (fromRow === 0 && fromCol === 0) tempCastlingRights.black.long = false;
     }
 
-    // Update castling rights when opponent's rook is captured
+    // Actualizar derechos de enroque al capturar una torre
     if (toRow !== undefined && toCol !== undefined) {
         const targetPiece = tempBoard[toRow][toCol];
         if (targetPiece === 'R') {
@@ -705,15 +716,23 @@ function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, t
 function performCastlingSimulation(color, side, tempBoard) {
     const row = color === 'white' ? 7 : 0;
     if (side === 'short') {
+        tempBoard[row][6] = tempBoard[row][4];
+        tempBoard[row][4] = '';
         tempBoard[row][5] = tempBoard[row][7];
         tempBoard[row][7] = '';
     } else {
+        tempBoard[row][2] = tempBoard[row][4];
+        tempBoard[row][4] = '';
         tempBoard[row][3] = tempBoard[row][0];
         tempBoard[row][0] = '';
     }
 }
 
-function isInCheck(playerColor, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
+function isInCheck(playerColor, tempBoard, tempEnPassant, tempCastlingRights) {
+    if (tempBoard === undefined) tempBoard = board;
+    if (tempEnPassant === undefined) tempEnPassant = enPassant;
+    if (tempCastlingRights === undefined) tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+
     const kingPosition = findKing(playerColor, tempBoard);
     if (!kingPosition) return false;
     const opponentColor = playerColor === 'white' ? 'black' : 'white';
@@ -758,7 +777,7 @@ function getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastli
         for (let col = 0; col < 8; col++) {
             const piece = tempBoard[row][col];
             if (piece && ((opponentColor === 'white' && piece === piece.toUpperCase()) || (opponentColor === 'black' && piece === piece.toLowerCase()))) {
-                const pieceMoves = getLegalMoves(row, col, opponentColor, true, tempBoard, tempEnPassant, tempCastlingRights); // skipChecks = true
+                const pieceMoves = getLegalMoves(row, col, opponentColor, true, tempBoard, tempEnPassant, tempCastlingRights);
                 moves = moves.concat(pieceMoves);
             }
         }
@@ -774,7 +793,7 @@ function knightDirections() { return [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2]
 function kingDirections() { return [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]; }
 
 // Función para verificar si se puede enrocar
-function canCastle(isWhite, side, tempCastlingRights = castlingRights) {
+function canCastle(isWhite, side, tempCastlingRights) {
     if (isWhite) {
         if (side === 'short') return tempCastlingRights.white.short;
         if (side === 'long') return tempCastlingRights.white.long;
@@ -807,6 +826,12 @@ function highlightKing(playerColor) {
     }
 }
 
+function clearKingHighlight() {
+    document.querySelectorAll('.square').forEach(square => {
+        square.classList.remove('check');
+    });
+}
+
 // Actualizar el tablero
 function updateBoard() {
     document.querySelectorAll('.square').forEach(square => {
@@ -818,7 +843,8 @@ function updateBoard() {
 }
 
 // Verificar si la pieza pertenece al jugador actual
-function isCurrentPlayerPiece(piece, playerColor = currentPlayer) {
+function isCurrentPlayerPiece(piece, playerColor) {
+    if (playerColor === undefined) playerColor = currentPlayer;
     return playerColor === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
 }
 
@@ -853,6 +879,16 @@ function saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, sp
     listItem.textContent = notation;
     historyList.appendChild(listItem);
     historyList.scrollTop = historyList.scrollHeight;
+}
+
+// Función para obtener la representación de los derechos de enroque
+function getCastlingRightsString(castlingRights) {
+    let rights = '';
+    if (castlingRights.white.short) rights += 'K';
+    if (castlingRights.white.long) rights += 'Q';
+    if (castlingRights.black.short) rights += 'k';
+    if (castlingRights.black.long) rights += 'q';
+    return rights || '-';
 }
 
 // Actualizar el nivel de dificultad

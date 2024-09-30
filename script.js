@@ -130,6 +130,17 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
         const side = toCol > fromCol ? 'short' : 'long';
         performCastling(currentPlayer, side);
         moveNotation = side === 'short' ? 'O-O' : 'O-O-O';
+
+        // Update castling rights after castling
+        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights);
+
+        if (!isSimulation) {
+            enPassant = tempEnPassant;
+            castlingRights = tempCastlingRights;
+            updateBoard();
+            saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, moveNotation);
+            postMoveActions();
+        }
     } else {
         // Guardar para captura al paso
         const enPassantTarget = tempEnPassant;
@@ -152,6 +163,9 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
             tempEnPassant = null;
         }
 
+        // Update castling rights before moving the piece
+        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights);
+
         board[toRow][toCol] = piece;
         board[fromRow][fromCol] = '';
 
@@ -168,9 +182,6 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
                 board[toRow][toCol] = piece === 'P' ? 'Q' : 'q';
             }
         }
-
-        // Actualizar derechos de enroque
-        updateCastlingRights(piece, fromRow, fromCol, tempCastlingRights);
 
         if (!isSimulation) {
             enPassant = tempEnPassant;
@@ -202,15 +213,23 @@ function postMoveActions() {
     }
 
     // Verificar tablas
-    if (isStalemate(opponentColor())) {
-        alert('¡Empate por ahogado!');
-        isGameOver = true;
-        clearInterval(gameInterval);
-        return;
-    }
+    // Update repetition positions
+    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
+    repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
 
     if (isThreefoldRepetition()) {
-        alert('¡Empate por repetición de posición tres veces!');
+        // Ask the user if they want to claim the draw
+        const claimDraw = confirm('Se ha repetido la misma posición tres veces. ¿Desea reclamar tablas por repetición?');
+        if (claimDraw) {
+            alert('¡Empate por repetición de posición tres veces!');
+            isGameOver = true;
+            clearInterval(gameInterval);
+            return;
+        }
+    }
+
+    if (isStalemate(opponentColor())) {
+        alert('¡Empate por ahogado!');
         isGameOver = true;
         clearInterval(gameInterval);
         return;
@@ -222,7 +241,8 @@ function postMoveActions() {
 }
 
 // Función para actualizar los derechos de enroque
-function updateCastlingRights(piece, row, col, tempCastlingRights = castlingRights) {
+function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights = castlingRights) {
+    // Update castling rights when moving own king or rook
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
         tempCastlingRights.white.long = false;
@@ -230,11 +250,23 @@ function updateCastlingRights(piece, row, col, tempCastlingRights = castlingRigh
         tempCastlingRights.black.short = false;
         tempCastlingRights.black.long = false;
     } else if (piece === 'R') {
-        if (row === 7 && col === 7) tempCastlingRights.white.short = false;
-        if (row === 7 && col === 0) tempCastlingRights.white.long = false;
+        if (fromRow === 7 && fromCol === 7) tempCastlingRights.white.short = false;
+        if (fromRow === 7 && fromCol === 0) tempCastlingRights.white.long = false;
     } else if (piece === 'r') {
-        if (row === 0 && col === 7) tempCastlingRights.black.short = false;
-        if (row === 0 && col === 0) tempCastlingRights.black.long = false;
+        if (fromRow === 0 && fromCol === 7) tempCastlingRights.black.short = false;
+        if (fromRow === 0 && fromCol === 0) tempCastlingRights.black.long = false;
+    }
+
+    // Update castling rights when opponent's rook is captured
+    if (toRow !== undefined && toCol !== undefined) {
+        const targetPiece = board[toRow][toCol];
+        if (targetPiece === 'R') {
+            if (toRow === 7 && toCol === 7) tempCastlingRights.white.short = false;
+            if (toRow === 7 && toCol === 0) tempCastlingRights.white.long = false;
+        } else if (targetPiece === 'r') {
+            if (toRow === 0 && toCol === 7) tempCastlingRights.black.short = false;
+            if (toRow === 0 && toCol === 0) tempCastlingRights.black.long = false;
+        }
     }
 }
 
@@ -306,6 +338,17 @@ function computerMove() {
         currentPlayerElement.textContent = 'Blanco';
     }
 
+    // Update repetition positions
+    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
+    repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
+
+    if (isThreefoldRepetition()) {
+        alert('La computadora reclama tablas por repetición de posición tres veces.');
+        isGameOver = true;
+        clearInterval(gameInterval);
+        return;
+    }
+
     if (isCheckMate('white')) {
         checkSound.play();
         alert('¡Jaque mate! La computadora gana.');
@@ -319,13 +362,6 @@ function computerMove() {
     // Verificar tablas
     if (isStalemate('white')) {
         alert('¡Empate por ahogado!');
-        isGameOver = true;
-        clearInterval(gameInterval);
-        return;
-    }
-
-    if (isThreefoldRepetition()) {
-        alert('¡Empate por repetición de posición tres veces!');
         isGameOver = true;
         clearInterval(gameInterval);
         return;
@@ -622,7 +658,7 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     }
 
     // Update castling rights
-    updateCastlingRightsSimulation(piece, fromRow, fromCol, simulatedCastlingRights);
+    updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, simulatedCastlingRights, simulatedBoard);
 
     // Handle castling move
     if (piece.toUpperCase() === 'K' && Math.abs(toCol - fromCol) === 2) {
@@ -635,7 +671,8 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     return inCheck;
 }
 
-function updateCastlingRightsSimulation(piece, fromRow, fromCol, tempCastlingRights) {
+function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
+    // Update castling rights when moving own king or rook
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
         tempCastlingRights.white.long = false;
@@ -648,6 +685,18 @@ function updateCastlingRightsSimulation(piece, fromRow, fromCol, tempCastlingRig
     } else if (piece === 'r') {
         if (fromRow === 0 && fromCol === 7) tempCastlingRights.black.short = false;
         if (fromRow === 0 && fromCol === 0) tempCastlingRights.black.long = false;
+    }
+
+    // Update castling rights when opponent's rook is captured
+    if (toRow !== undefined && toCol !== undefined) {
+        const targetPiece = tempBoard[toRow][toCol];
+        if (targetPiece === 'R') {
+            if (toRow === 7 && toCol === 7) tempCastlingRights.white.short = false;
+            if (toRow === 7 && toCol === 0) tempCastlingRights.white.long = false;
+        } else if (targetPiece === 'r') {
+            if (toRow === 0 && toCol === 7) tempCastlingRights.black.short = false;
+            if (toRow === 0 && toCol === 0) tempCastlingRights.black.long = false;
+        }
     }
 }
 
@@ -683,9 +732,12 @@ function isStalemate(playerColor) {
 }
 
 function isThreefoldRepetition() {
-    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
-    repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
-    return repetitionPositions[position] >= 3;
+    for (let pos in repetitionPositions) {
+        if (repetitionPositions[pos] >= 3) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function findKing(playerColor, tempBoard) {

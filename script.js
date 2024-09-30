@@ -125,7 +125,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
         moveNotation = side === 'short' ? 'O-O' : 'O-O-O';
 
         // Update castling rights
-        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard);
+        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard, targetPiece);
 
         if (!isSimulation) {
             enPassant = tempEnPassant;
@@ -157,7 +157,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
         }
 
         // Update castling rights
-        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard);
+        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard, targetPiece);
 
         tempBoard[toRow][toCol] = piece;
         tempBoard[fromRow][fromCol] = '';
@@ -242,7 +242,7 @@ function postMoveActions() {
 }
 
 // Function to update castling rights
-function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
+function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard, targetPiece) {
     // Update castling rights when moving the king or rook
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
@@ -259,8 +259,7 @@ function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlin
     }
 
     // Update castling rights when capturing a rook
-    if (toRow !== undefined && toCol !== undefined) {
-        const targetPiece = tempBoard[toRow][toCol];
+    if (toRow !== undefined && toCol !== undefined && targetPiece !== undefined && targetPiece !== '') {
         if (targetPiece === 'R') {
             if (toRow === 7 && toCol === 7) tempCastlingRights.white.short = false;
             if (toRow === 7 && toCol === 0) tempCastlingRights.white.long = false;
@@ -342,10 +341,13 @@ function computerMove() {
     repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
 
     if (isThreefoldRepetition()) {
-        alert('La computadora reclama tablas por repetición de posición tres veces.');
-        isGameOver = true;
-        clearInterval(gameInterval);
-        return;
+        const acceptDraw = confirm('La computadora ofrece tablas por repetición de posición tres veces. ¿Acepta el empate?');
+        if (acceptDraw) {
+            alert('¡Empate por repetición de posición tres veces!');
+            isGameOver = true;
+            clearInterval(gameInterval);
+            return;
+        }
     }
 
     if (isCheckMate('white')) {
@@ -651,7 +653,7 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     }
 
     // Update castling rights in simulation
-    updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, simulatedCastlingRights, simulatedBoard);
+    updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, simulatedCastlingRights, simulatedBoard, targetPiece);
 
     // Handle castling in simulation
     if (piece.toUpperCase() === 'K' && Math.abs(toCol - fromCol) === 2) {
@@ -665,7 +667,7 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     return inCheck;
 }
 
-function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
+function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard, targetPiece) {
     // Update castling rights when moving the king or rook
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
@@ -682,8 +684,7 @@ function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, t
     }
 
     // Update castling rights when capturing a rook
-    if (toRow !== undefined && toCol !== undefined) {
-        const targetPiece = tempBoard[toRow][toCol];
+    if (toRow !== undefined && toCol !== undefined && targetPiece !== undefined && targetPiece !== '') {
         if (targetPiece === 'R') {
             if (toRow === 7 && toCol === 7) tempCastlingRights.white.short = false;
             if (toRow === 7 && toCol === 0) tempCastlingRights.white.long = false;

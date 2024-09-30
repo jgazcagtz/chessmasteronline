@@ -100,13 +100,7 @@ function selectPiece(e) {
             movePiece(selectedPiece.row, selectedPiece.col, row, col);
             selectedPiece = null;
             clearHighlights();
-            setTimeout(() => {
-                if (!isGameOver) {
-                    currentPlayer = 'black';
-                    currentPlayerElement.textContent = 'Negro';
-                    computerMove();
-                }
-            }, 500);
+            // Turn management is now handled in postMoveActions()
         } else {
             selectedPiece = null;
             clearHighlights();
@@ -148,8 +142,8 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
 
         // Captura al paso
         if (piece.toUpperCase() === 'P' && toCol !== fromCol && targetPiece === '' && enPassantTarget && enPassantTarget.row === toRow && enPassantTarget.col === toCol) {
-            board[fromRow][toCol] = '';
             if (!isSimulation) captureSound.play();
+            board[fromRow][toCol] = '';
         } else if (targetPiece !== '') {
             if (!isSimulation) captureSound.play();
         } else {
@@ -238,6 +232,13 @@ function postMoveActions() {
     // Cambiar el turno
     currentPlayer = opponentColor();
     currentPlayerElement.textContent = currentPlayer === 'white' ? 'Blanco' : 'Negro';
+
+    // Si es el turno de la computadora, ejecutar su movimiento
+    if (!isGameOver && currentPlayer === 'black') {
+        setTimeout(() => {
+            computerMove();
+        }, 500);
+    }
 }
 
 // Función para actualizar los derechos de enroque
@@ -291,6 +292,7 @@ function performCastling(color, side) {
 function showPromotionModal(row, col, color) {
     promotionModal.style.display = 'block';
     promotionOptions.innerHTML = '';
+
     promotionPieces[color].forEach(piece => {
         const pieceElem = document.createElement('span');
         pieceElem.classList.add('promotion-piece');
@@ -334,9 +336,7 @@ function computerMove() {
 
     if (isGameOver) return;
 
-    if (currentPlayer === 'white') {
-        currentPlayerElement.textContent = 'Blanco';
-    }
+    currentPlayerElement.textContent = 'Blanco';
 
     // Update repetition positions
     const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
@@ -367,7 +367,9 @@ function computerMove() {
         return;
     }
 
+    // Cambiar el turno de vuelta al jugador
     currentPlayer = 'white';
+    currentPlayerElement.textContent = 'Blanco';
 }
 
 // Función para obtener un movimiento aleatorio

@@ -12,9 +12,9 @@ body {
 
 /* Title styling */
 h1 {
-    margin: 40px 0;
+    margin: 20px 0;
     color: #333;
-    font-size: 36px;
+    font-size: clamp(24px, 4vw, 36px); /* Responsive font size */
     letter-spacing: 1.5px;
     font-weight: 700;
     text-shadow: 2px 2px #bbb;
@@ -25,16 +25,16 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 20px; /* More space between game info and board */
+    margin-bottom: 20px; /* Space between game info and board */
     flex-wrap: wrap;
     gap: 10px;
 }
 
 #current-player, #timer, #difficulty {
-    margin: 0 15px;
-    font-size: 18px;
+    margin: 5px 10px;
+    font-size: clamp(14px, 2vw, 18px); /* Responsive font size */
     background-color: #fff;
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     transition: transform 0.3s;
@@ -45,9 +45,9 @@ h1 {
 }
 
 #new-game-btn {
-    margin-left: 15px;
+    margin: 5px 10px;
     padding: 8px 20px;
-    font-size: 16px;
+    font-size: clamp(14px, 2vw, 16px);
     cursor: pointer;
     border: none;
     background-color: #007bff;
@@ -67,17 +67,17 @@ h1 {
     justify-content: center;
     align-items: flex-start;
     flex-wrap: wrap;
-    margin-bottom: 40px; /* Ensures enough separation from the footer */
+    margin-bottom: 40px; /* Separation from the footer */
     gap: 40px;
 }
 
 /* Chessboard */
 #board {
     display: grid;
-    grid-template-columns: repeat(8, 1fr); /* Changed from fixed 60px to flexible */
-    grid-template-rows: repeat(8, 1fr);    /* Changed from fixed 60px to flexible */
-    width: 90vmin;                           /* Responsive width */
-    height: 90vmin;                          /* Responsive height */
+    grid-template-columns: repeat(8, 1fr); /* Flexible columns */
+    grid-template-rows: repeat(8, 1fr);    /* Flexible rows */
+    width: 90vmin;                           /* Responsive size relative to viewport */
+    height: 90vmin;                          /* Maintains square aspect ratio */
     max-width: 480px;                        /* Optional max size for larger screens */
     max-height: 480px;                       /* Optional max size for larger screens */
     border: 5px solid #333;
@@ -86,8 +86,8 @@ h1 {
 }
 
 .square {
-    width: 100%;      /* Make squares fill the grid cell */
-    height: 100%;     /* Make squares fill the grid cell */
+    width: 100%;      /* Fill the grid cell */
+    height: 100%;     /* Fill the grid cell */
     position: relative;
     transition: background-color 0.3s, transform 0.2s;
 }
@@ -106,9 +106,7 @@ h1 {
 
 /* Chess pieces */
 .piece {
-    font-size: 4vw;               /* Responsive font size based on viewport width */
-    min-font-size: 24px;          /* Minimum size to ensure readability */
-    max-font-size: 48px;          /* Maximum size to prevent overflow */
+    font-size: clamp(24px, 4vw, 48px); /* Responsive font size with bounds */
     cursor: pointer;
     user-select: none;
     line-height: 1;
@@ -189,9 +187,7 @@ h1 {
 }
 
 .promotion-piece {
-    font-size: 8vw;              /* Responsive font size */
-    min-font-size: 30px;         /* Minimum size to ensure visibility */
-    max-font-size: 60px;         /* Maximum size to prevent overflow */
+    font-size: clamp(30px, 8vw, 60px); /* Responsive font size */
     cursor: pointer;
     transition: transform 0.2s;
 }
@@ -212,7 +208,7 @@ h1 {
 }
 
 #move-history h2 {
-    font-size: 20px;
+    font-size: clamp(18px, 2vw, 20px);
     margin-bottom: 10px;
     color: #333;
 }
@@ -226,7 +222,7 @@ h1 {
 
 #history-list li {
     margin-bottom: 5px;
-    font-size: 16px;
+    font-size: clamp(14px, 2vw, 16px);
     color: #555;
 }
 
@@ -267,15 +263,11 @@ footer a.buy-me-a-beer:hover {
     }
 
     .piece {
-        font-size: 3vw;
-        min-font-size: 20px;
-        max-font-size: 40px;
+        font-size: clamp(20px, 3vw, 40px);
     }
 
     .promotion-piece {
-        font-size: 6vw;
-        min-font-size: 25px;
-        max-font-size: 50px;
+        font-size: clamp(25px, 6vw, 50px);
     }
 
     #move-history {
@@ -302,15 +294,11 @@ footer a.buy-me-a-beer:hover {
     }
 
     .piece {
-        font-size: 4vw;
-        min-font-size: 24px;
-        max-font-size: 48px;
+        font-size: clamp(24px, 4vw, 48px);
     }
 
     .promotion-piece {
-        font-size: 8vw;
-        min-font-size: 30px;
-        max-font-size: 60px;
+        font-size: clamp(30px, 8vw, 60px);
     }
 }
 
@@ -321,15 +309,11 @@ footer a.buy-me-a-beer:hover {
     }
 
     .piece {
-        font-size: 5vw;
-        min-font-size: 24px;
-        max-font-size: 48px;
+        font-size: clamp(24px, 5vw, 48px);
     }
 
     .promotion-piece {
-        font-size: 10vw;
-        min-font-size: 30px;
-        max-font-size: 60px;
+        font-size: clamp(30px, 10vw, 60px);
     }
 
     #move-history {

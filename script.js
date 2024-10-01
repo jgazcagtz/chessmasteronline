@@ -40,17 +40,16 @@ const promotionPieces = {
     'black': ['q', 'r', 'b', 'n']
 };
 
-// Piece-Square Tables (Simplified for demonstration)
-// Values are from https://www.chessprogramming.org/Simplified_Evaluation_Function
+// Piece-Square Tables (Comprehensive)
 const pieceSquareTables = {
     'P': [
         0, 0, 0, 0, 0, 0, 0, 0,
-        50, 50, 50, 50, 50, 50, 50, 50,
-        10, 10, 20, 30, 30, 20, 10, 10,
-        5, 5, 10, 25, 25, 10, 5, 5,
-        0, 0, 0, 20, 20, 0, 0, 0,
-        5, -5, -10, 0, 0, -10, -5, 5,
         5, 10, 10, -20, -20, 10, 10, 5,
+        5, -5, -10, 0, 0, -10, -5, 5,
+        0, 0, 0, 20, 20, 0, 0, 0,
+        5, 5, 10, 25, 25, 10, 5, 5,
+        10, 10, 20, 30, 30, 20, 10, 10,
+        50, 50, 50, 50, 50, 50, 50, 50,
         0, 0, 0, 0, 0, 0, 0, 0
     ],
     'p': [
@@ -63,8 +62,106 @@ const pieceSquareTables = {
         -5, 0, 0, 0, 0, 0, 0, -5,
         0, 0, 0, 0, 0, 0, 0, 0
     ],
-    // Similarly define for other pieces...
-    // For brevity, only pawns are fully defined. You should define tables for other pieces.
+    'N': [
+        -50, -40, -30, -30, -30, -30, -40, -50,
+        -40, -20, 0, 0, 0, 0, -20, -40,
+        -30, 0, 10, 15, 15, 10, 0, -30,
+        -30, 5, 15, 20, 20, 15, 5, -30,
+        -30, 0, 15, 20, 20, 15, 0, -30,
+        -30, 5, 10, 15, 15, 10, 5, -30,
+        -40, -20, 0, 5, 5, 0, -20, -40,
+        -50, -40, -30, -30, -30, -30, -40, -50
+    ],
+    'n': [
+        -50, -40, -30, -30, -30, -30, -40, -50,
+        -40, -20, 0, 5, 5, 0, -20, -40,
+        -30, 5, 10, 15, 15, 10, 5, -30,
+        -30, 0, 15, 20, 20, 15, 0, -30,
+        -30, 5, 15, 20, 20, 15, 5, -30,
+        -30, 0, 10, 15, 15, 10, 0, -30,
+        -40, -20, 0, 0, 0, 0, -20, -40,
+        -50, -40, -30, -30, -30, -30, -40, -50
+    ],
+    'B': [
+        -20, -10, -10, -10, -10, -10, -10, -20,
+        -10, 5, 0, 0, 0, 0, 5, -10,
+        -10, 10, 10, 10, 10, 10, 10, -10,
+        -10, 0, 10, 10, 10, 10, 0, -10,
+        -10, 5, 5, 10, 10, 5, 5, -10,
+        -10, 0, 5, 10, 10, 5, 0, -10,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -20, -10, -10, -10, -10, -10, -10, -20
+    ],
+    'b': [
+        -20, -10, -10, -10, -10, -10, -10, -20,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -10, 5, 5, 10, 10, 5, 5, -10,
+        -10, 0, 5, 10, 10, 5, 0, -10,
+        -10, 5, 10, 10, 10, 10, 5, -10,
+        -10, 10, 10, 10, 10, 10, 10, -10,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -20, -10, -10, -10, -10, -10, -10, -20
+    ],
+    'R': [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        5, 10, 10, 10, 10, 10, 10, 5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        0, 0, 0, 5, 5, 0, 0, 0
+    ],
+    'r': [
+        0, 0, 0, 5, 5, 0, 0, 0,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        5, 10, 10, 10, 10, 10, 10, 5,
+        0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    'Q': [
+        -20, -10, -10, -5, -5, -10, -10, -20,
+        -10, 0, 5, 0, 0, 0, 0, -10,
+        -10, 5, 5, 5, 5, 5, 0, -10,
+        0, 0, 5, 5, 5, 5, 0, -5,
+        -5, 0, 5, 5, 5, 5, 0, -5,
+        -10, 5, 5, 5, 5, 5, 0, -10,
+        -10, 0, 5, 0, 0, 0, 0, -10,
+        -20, -10, -10, -5, -5, -10, -10, -20
+    ],
+    'q': [
+        -20, -10, -10, -5, -5, -10, -10, -20,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -10, 0, 5, 0, 0, 0, 0, -10,
+        -5, 0, 5, 5, 5, 5, 0, -5,
+        0, 0, 5, 5, 5, 5, 0, -5,
+        -10, 5, 5, 5, 5, 5, 0, -10,
+        -10, 0, 5, 0, 0, 0, 0, -10,
+        -20, -10, -10, -5, -5, -10, -10, -20
+    ],
+    'K': [
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -20, -30, -30, -40, -40, -30, -30, -20,
+        -10, -20, -20, -20, -20, -20, -20, -10,
+        20, 20, 0, 0, 0, 0, 20, 20,
+        20, 30, 10, 0, 0, 10, 30, 20
+    ],
+    'k': [
+        20, 30, 10, 0, 0, 10, 30, 20,
+        20, 20, 0, 0, 0, 0, 20, 20,
+        -10, -20, -20, -20, -20, -20, -20, -10,
+        -20, -30, -30, -40, -40, -30, -30, -20,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30,
+        -30, -40, -40, -50, -50, -40, -40, -30
+    ]
 };
 
 // Initialize the board with the standard position
@@ -93,7 +190,8 @@ function initializeGame() {
     isGameOver = false;
     time = 0;
 
-    currentPlayerElement.textContent = '⚪ Blanco';
+    currentPlayerElement.textContent = currentPlayer === 'white' ? '⚪ Blanco' : '⚫ Negro';
+
     historyList.innerHTML = '';
     clearInterval(gameInterval);
     startTimer();
@@ -303,7 +401,7 @@ function isEmptySquare(row, col, tempBoard = board) {
     return isOnBoard(row, col) && !tempBoard[row][col];
 }
 
-// Check if a piece belongs to a color
+// Check if a piece belongs to the current player
 function isCurrentPlayerPiece(piece) {
     return currentPlayer === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
 }
@@ -570,7 +668,7 @@ function computerMove() {
     }
 }
 
-// Get the best move using Minimax algorithm
+// Get the best move using Minimax algorithm with enhancements
 function getBestMove(color, depth) {
     const maximizingPlayer = color === 'white';
     let bestScore = maximizingPlayer ? -Infinity : Infinity;
@@ -579,9 +677,9 @@ function getBestMove(color, depth) {
 
     // Move Ordering: Prioritize captures and checks to optimize alpha-beta pruning
     allMoves.sort((a, b) => {
-        const aScore = board[a.toRow][a.toCol] ? getPieceValue(board[a.toRow][a.toCol]) : 0;
-        const bScore = board[b.toRow][b.toCol] ? getPieceValue(board[b.toRow][b.toCol]) : 0;
-        return bScore - aScore; // Prioritize higher captures first
+        const aCapture = board[a.toRow][a.toCol] ? getPieceValue(board[a.toRow][a.toCol]) : 0;
+        const bCapture = board[b.toRow][b.toCol] ? getPieceValue(board[b.toRow][b.toCol]) : 0;
+        return bCapture - aCapture; // Prioritize higher captures first
     });
 
     for (let move of allMoves) {
@@ -605,7 +703,7 @@ function getBestMove(color, depth) {
     return bestMove;
 }
 
-// Minimax algorithm with alpha-beta pruning
+// Minimax algorithm with alpha-beta pruning and enhancements
 function minimax(tempBoard, depth, alpha, beta, isMaximizingPlayer, tempEnPassant, tempCastlingRights) {
     if (depth === 0 || isGameOverState(tempBoard, tempCastlingRights)) {
         return evaluateBoard(tempBoard);
@@ -621,6 +719,13 @@ function minimax(tempBoard, depth, alpha, beta, isMaximizingPlayer, tempEnPassan
             return 0; // Stalemate
         }
     }
+
+    // Enhanced move ordering: prioritize captures and checks
+    allMoves.sort((a, b) => {
+        const aCapture = tempBoard[a.toRow][a.toCol] ? getPieceValue(tempBoard[a.toRow][a.toCol]) : 0;
+        const bCapture = tempBoard[b.toRow][b.toCol] ? getPieceValue(tempBoard[b.toRow][b.toCol]) : 0;
+        return bCapture - aCapture; // Prioritize higher captures first
+    });
 
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
@@ -655,11 +760,11 @@ function minimax(tempBoard, depth, alpha, beta, isMaximizingPlayer, tempEnPassan
     }
 }
 
-// Evaluate the board position
+// Evaluate the board position with enhanced factors
 function evaluateBoard(tempBoard) {
     const pieceValues = {
-        'p': -10, 'n': -30, 'b': -30, 'r': -50, 'q': -90, 'k': -900,
-        'P': 10, 'N': 30, 'B': 30, 'R': 50, 'Q': 90, 'K': 900
+        'p': -100, 'n': -320, 'b': -330, 'r': -500, 'q': -900, 'k': -20000,
+        'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000
     };
 
     let total = 0;
@@ -673,6 +778,12 @@ function evaluateBoard(tempBoard) {
         }
     }
 
+    // Additional Evaluation Factors
+    total += mobility(tempBoard, 'white') * 10;
+    total -= mobility(tempBoard, 'black') * 10;
+    total += kingSafety(tempBoard, 'white');
+    total -= kingSafety(tempBoard, 'black');
+
     return total;
 }
 
@@ -684,6 +795,20 @@ function getPieceSquareValue(piece, row, col) {
         // For white, use the table as is; for black, mirror vertically
         const index = isWhite ? (row * 8 + col) : ((7 - row) * 8 + col);
         return pieceSquareTables[upperPiece][index];
+    }
+    return 0;
+}
+
+// Mobility: Number of legal moves
+function mobility(tempBoard, color) {
+    const legalMoves = getAllLegalMoves(color, tempBoard);
+    return legalMoves.length;
+}
+
+// King Safety: Penalize if king is under threat
+function kingSafety(tempBoard, color) {
+    if (isKingInCheck(tempBoard, color)) {
+        return -50;
     }
     return 0;
 }
@@ -912,46 +1037,11 @@ initializeGame();
 
 /* ======================== AI Enhancements ======================== */
 
-// Get the best move using Minimax algorithm
-function getBestMove(color, depth) {
-    const maximizingPlayer = color === 'white';
-    let bestScore = maximizingPlayer ? -Infinity : Infinity;
-    let bestMove = null;
-    const allMoves = getAllLegalMoves(color);
-
-    // Move Ordering: Prioritize captures and checks to optimize alpha-beta pruning
-    allMoves.sort((a, b) => {
-        const aCapture = board[a.toRow][a.toCol] ? getPieceValue(board[a.toRow][a.toCol]) : 0;
-        const bCapture = board[b.toRow][b.toCol] ? getPieceValue(board[b.toRow][b.toCol]) : 0;
-        return bCapture - aCapture; // Prioritize higher captures first
-    });
-
-    for (let move of allMoves) {
-        const tempBoard = JSON.parse(JSON.stringify(board));
-        const tempEnPassant = enPassantTarget ? { ...enPassantTarget } : null;
-        const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
-
-        makeTemporaryMove(tempBoard, tempCastlingRights, move.fromRow, move.fromCol, move.toRow, move.toCol, move.castling, move.enPassant);
-
-        const score = minimax(tempBoard, depth - 1, -Infinity, Infinity, !maximizingPlayer, tempEnPassant, tempCastlingRights);
-
-        if (maximizingPlayer && score > bestScore) {
-            bestScore = score;
-            bestMove = move;
-        } else if (!maximizingPlayer && score < bestScore) {
-            bestScore = score;
-            bestMove = move;
-        }
-    }
-
-    return bestMove;
-}
-
 // Get piece value for ordering moves
 function getPieceValue(piece) {
     const pieceValues = {
-        'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900,
-        'P': 10, 'N': 30, 'B': 30, 'R': 50, 'Q': 90, 'K': 900
+        'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000,
+        'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000
     };
     return pieceValues[piece] || 0;
 }

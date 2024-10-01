@@ -927,13 +927,13 @@ function computerMove() {
             depth = 2; // Fácil
             break;
         case 2:
-            depth = 3; // Medio
+            depth = 4; // Medio
             break;
         case 3:
-            depth = 4; // Difícil
+            depth = 6; // Difícil
             break;
         default:
-            depth = 3;
+            depth = 4;
     }
 
     const bestMove = getBestMove('black', depth);
@@ -960,7 +960,7 @@ function getBestMove(color, depth) {
     let bestMove = null;
     const allMoves = getAllLegalMoves(color);
 
-    // Move Ordering: Prioritize captures
+    // Move Ordering: Prioritize captures and checks
     allMoves.sort((a, b) => {
         const aValue = board[a.toRow][a.toCol] ? getPieceValue(board[a.toRow][a.toCol]) : 0;
         const bValue = board[b.toRow][b.toCol] ? getPieceValue(board[b.toRow][b.toCol]) : 0;
@@ -1009,7 +1009,7 @@ function minimax(currentBoard, depth, alpha, beta, maximizingPlayer, state) {
         }
     }
 
-    // Move Ordering: Prioritize captures
+    // Move Ordering: Prioritize captures and checks
     allMoves.sort((a, b) => {
         const aValue = state.board[a.toRow][a.toCol] ? getPieceValue(state.board[a.toRow][a.toCol]) : 0;
         const bValue = state.board[b.toRow][b.toCol] ? getPieceValue(state.board[b.toRow][b.toCol]) : 0;
@@ -1145,14 +1145,18 @@ function isKingInCheck(tempBoard, color) {
 function findKing(tempBoard, color) {
     const king = color === 'white' ? 'K' : 'k';
     for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-            if (tempBoard[row][col] === king) {
-                return { row, col };
+        // Check if tempBoard[row] is valid before accessing its columns
+        if (tempBoard[row]) {
+            for (let col = 0; col < 8; col++) {
+                if (tempBoard[row][col] === king) {
+                    return { row, col };
+                }
             }
         }
     }
-    return null;
+    return null; // If the king is not found, return null
 }
+
 
 /**
  * Checks if a square is attacked by the opponent.

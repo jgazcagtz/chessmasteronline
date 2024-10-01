@@ -924,13 +924,13 @@ function computerMove() {
     let depth;
     switch (difficultyLevel) {
         case 1:
-            depth = 2; // Fácil
+            depth = 2; // Easy
             break;
         case 2:
-            depth = 4; // Medio
+            depth = 4; // Medium
             break;
         case 3:
-            depth = 6; // Difícil
+            depth = 6; // Hard
             break;
         default:
             depth = 4;
@@ -947,6 +947,7 @@ function computerMove() {
         clearInterval(gameInterval);
     }
 }
+
 
 /**
  * Retrieves the best move for the AI using the Minimax algorithm with alpha-beta pruning.
@@ -972,7 +973,15 @@ function getBestMove(color, depth) {
         });
     }
 
+    // Prevent repeating moves unless no other options
+    const previousMove = moveHistory[moveHistory.length - 1];
     for (const move of allMoves) {
+        // Check if repeating the same move
+        if (previousMove && previousMove.fromRow === move.toRow && previousMove.fromCol === move.toCol &&
+            previousMove.toRow === move.fromRow && previousMove.toCol === move.fromCol) {
+            continue;  // Skip repeated back-and-forth move
+        }
+
         const tempState = simulateMove(move.fromRow, move.fromCol, move.toRow, move.toCol, move, board, castlingRights, enPassantTarget);
         const score = minimax(tempState.board, depth - 1, -Infinity, Infinity, !maximizing, tempState);
 
@@ -987,6 +996,7 @@ function getBestMove(color, depth) {
 
     return bestMove;
 }
+
 
 
 /**
@@ -1072,15 +1082,16 @@ function evaluateBoard(tempBoard) {
     // Additional Aggressive Factors
     score += mobility(tempBoard, 'white') * 10;  // Favor moves that provide more mobility
     score -= mobility(tempBoard, 'black') * 10;
-    score += kingSafety(tempBoard, 'white');
-    score -= kingSafety(tempBoard, 'black');
-    
+    score += kingSafety(tempBoard, 'white') * 100;  // Increase weight for king safety
+    score -= kingSafety(tempBoard, 'black') * 100;
+
     // Encourage the AI to make attacking moves:
     score += aggressivenessFactor(tempBoard, 'white');
     score -= aggressivenessFactor(tempBoard, 'black');
 
     return score;
 }
+
 
 // Add aggressiveness factor
 function aggressivenessFactor(tempBoard, color) {
@@ -1091,12 +1102,13 @@ function aggressivenessFactor(tempBoard, color) {
     allMoves.forEach(move => {
         const targetPiece = tempBoard[move.toRow][move.toCol];
         if (targetPiece && isPieceColor(targetPiece, opponent)) {
-            // Give more points for capturing high-value pieces
-            factor += getPieceValue(targetPiece) * 2;
+            // Give more points for capturing high-value pieces based on difficulty level
+            factor += getPieceValue(targetPiece) * (difficultyLevel + 1);
         }
     });
     return factor;
 }
+
 
 
 /**

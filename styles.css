@@ -74,18 +74,20 @@ h1 {
 /* Chessboard */
 #board {
     display: grid;
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
-    width: 480px;
-    height: 480px;
+    grid-template-columns: repeat(8, 1fr); /* Changed from fixed 60px to flexible */
+    grid-template-rows: repeat(8, 1fr);    /* Changed from fixed 60px to flexible */
+    width: 90vmin;                           /* Responsive width */
+    height: 90vmin;                          /* Responsive height */
+    max-width: 480px;                        /* Optional max size for larger screens */
+    max-height: 480px;                       /* Optional max size for larger screens */
     border: 5px solid #333;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Modern shadow */
     position: relative;
 }
 
 .square {
-    width: 60px;
-    height: 60px;
+    width: 100%;      /* Make squares fill the grid cell */
+    height: 100%;     /* Make squares fill the grid cell */
     position: relative;
     transition: background-color 0.3s, transform 0.2s;
 }
@@ -104,7 +106,9 @@ h1 {
 
 /* Chess pieces */
 .piece {
-    font-size: 48px;
+    font-size: 4vw;               /* Responsive font size based on viewport width */
+    min-font-size: 24px;          /* Minimum size to ensure readability */
+    max-font-size: 48px;          /* Maximum size to prevent overflow */
     cursor: pointer;
     user-select: none;
     line-height: 1;
@@ -185,7 +189,9 @@ h1 {
 }
 
 .promotion-piece {
-    font-size: 60px;
+    font-size: 8vw;              /* Responsive font size */
+    min-font-size: 30px;         /* Minimum size to ensure visibility */
+    max-font-size: 60px;         /* Maximum size to prevent overflow */
     cursor: pointer;
     transition: transform 0.2s;
 }
@@ -253,6 +259,30 @@ footer a.buy-me-a-beer:hover {
 }
 
 /* Responsive design */
+@media (max-width: 1200px) {
+    /* Adjust max-width for larger screens */
+    #board {
+        max-width: 600px;
+        max-height: 600px;
+    }
+
+    .piece {
+        font-size: 3vw;
+        min-font-size: 20px;
+        max-font-size: 40px;
+    }
+
+    .promotion-piece {
+        font-size: 6vw;
+        min-font-size: 25px;
+        max-font-size: 50px;
+    }
+
+    #move-history {
+        max-width: 250px;
+    }
+}
+
 @media (max-width: 800px) {
     #game {
         flex-direction: column;
@@ -263,11 +293,24 @@ footer a.buy-me-a-beer:hover {
         margin-left: 0;
         margin-top: 20px;
         width: 90%;
+        max-width: 300px;
     }
     
     #board {
         width: 90vmin;
         height: 90vmin;
+    }
+
+    .piece {
+        font-size: 4vw;
+        min-font-size: 24px;
+        max-font-size: 48px;
+    }
+
+    .promotion-piece {
+        font-size: 8vw;
+        min-font-size: 30px;
+        max-font-size: 60px;
     }
 }
 
@@ -278,7 +321,15 @@ footer a.buy-me-a-beer:hover {
     }
 
     .piece {
-        font-size: 40px;
+        font-size: 5vw;
+        min-font-size: 24px;
+        max-font-size: 48px;
+    }
+
+    .promotion-piece {
+        font-size: 10vw;
+        min-font-size: 30px;
+        max-font-size: 60px;
     }
 
     #move-history {

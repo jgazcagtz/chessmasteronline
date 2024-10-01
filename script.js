@@ -960,12 +960,17 @@ function getBestMove(color, depth) {
     let bestMove = null;
     const allMoves = getAllLegalMoves(color);
 
-    // Move Ordering: Prioritize captures and checks
-    allMoves.sort((a, b) => {
-        const aValue = board[a.toRow][a.toCol] ? getPieceValue(board[a.toRow][a.toCol]) : 0;
-        const bValue = board[b.toRow][b.toCol] ? getPieceValue(board[b.toRow][b.toCol]) : 0;
-        return bValue - aValue; // Higher captures first
-    });
+    // Modify behavior based on difficulty level:
+    if (difficultyLevel === 1) {  // Easy
+        allMoves.sort(() => Math.random() - 0.5);  // Randomize moves to be less optimal
+    } else if (difficultyLevel === 3) {  // Hard
+        allMoves.sort((a, b) => {
+            // Prioritize attacking moves
+            const aValue = board[a.toRow][a.toCol] ? getPieceValue(board[a.toRow][a.toCol]) : 0;
+            const bValue = board[b.toRow][b.toCol] ? getPieceValue(board[b.toRow][b.toCol]) : 0;
+            return bValue - aValue;
+        });
+    }
 
     for (const move of allMoves) {
         const tempState = simulateMove(move.fromRow, move.fromCol, move.toRow, move.toCol, move, board, castlingRights, enPassantTarget);
@@ -982,6 +987,7 @@ function getBestMove(color, depth) {
 
     return bestMove;
 }
+
 
 /**
  * Minimax algorithm with alpha-beta pruning.
@@ -1049,9 +1055,9 @@ function evaluateBoard(tempBoard) {
         'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000,
         'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000
     };
-
     let score = 0;
 
+    // Standard material and positional evaluation
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const piece = tempBoard[row][col];
@@ -1063,14 +1069,35 @@ function evaluateBoard(tempBoard) {
         }
     }
 
-    // Additional Factors
-    score += mobility(tempBoard, 'white') * 10;
+    // Additional Aggressive Factors
+    score += mobility(tempBoard, 'white') * 10;  // Favor moves that provide more mobility
     score -= mobility(tempBoard, 'black') * 10;
     score += kingSafety(tempBoard, 'white');
     score -= kingSafety(tempBoard, 'black');
+    
+    // Encourage the AI to make attacking moves:
+    score += aggressivenessFactor(tempBoard, 'white');
+    score -= aggressivenessFactor(tempBoard, 'black');
 
     return score;
 }
+
+// Add aggressiveness factor
+function aggressivenessFactor(tempBoard, color) {
+    let factor = 0;
+    const opponent = color === 'white' ? 'black' : 'white';
+    const allMoves = getAllLegalMoves(color, { board: tempBoard, castlingRights, enPassantTarget });
+
+    allMoves.forEach(move => {
+        const targetPiece = tempBoard[move.toRow][move.toCol];
+        if (targetPiece && isPieceColor(targetPiece, opponent)) {
+            // Give more points for capturing high-value pieces
+            factor += getPieceValue(targetPiece) * 2;
+        }
+    });
+    return factor;
+}
+
 
 /**
  * Retrieves the piece-square table value for a given piece.

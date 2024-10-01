@@ -236,6 +236,22 @@ footer {
     margin-top: auto; /* Ensures it sticks to the bottom only if necessary */
 }
 
+footer p {
+    margin: 0;
+}
+
+footer a.buy-me-a-beer {
+    color: #FFD700; /* Gold color for prominence */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s, transform 0.2s;
+}
+
+footer a.buy-me-a-beer:hover {
+    color: #FFA500; /* Orange on hover */
+    transform: scale(1.05);
+}
+
 /* Responsive design */
 @media (max-width: 800px) {
     #game {

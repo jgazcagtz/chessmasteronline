@@ -1,7 +1,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ajedrez Maestro ♟️ - Juego de Ajedrez</title>
+    <title>ChessMaster ♟️ - Juego de Ajedrez</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Estilos CSS -->
     <link rel="stylesheet" href="styles.css">
@@ -14,16 +14,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Eagle+Lake&family=Uncial+Antiqua&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>♟️ ChessMaster Online ♟️</h1>
+    <h1>🧙‍♂️ ChessMaster ♟️</h1>
     <div id="game-info">
         <div id="current-player">🔄 Turno: <span id="player-color">⚪ Blanco</span></div>
         <div id="timer">⏳ Tiempo: <span id="time">00:00</span></div>
         <div id="difficulty">
-            ⚙️ Dificultad: 
+            🧞‍♂️ Nivel: 
             <select id="level-select">
-                <option value="1">🗡️ Fácil</option>
-                <option value="2" selected>🛡️ Medio</option>
-                <option value="3">⚔️ Difícil</option>
+                <option value="1">🗡️ 1</option>
+                <option value="2" selected>🛡️ 2</option>
+                <option value="3">⚔️ 3</option>
             </select>
         </div>
         <button id="new-game-btn">💀 Nueva Partida</button>
@@ -31,12 +31,17 @@
     <div id="game">
         <div id="board"></div>
         <div id="move-history">
-            <h2>📜 Historial de Movimientos</h2>
+            <h2>📜 Historial</h2>
             <ol id="history-list"></ol>
         </div>
     </div>
     <footer>
-        <p>JG®</p>
+        <p>
+            JG® | 
+            <a href="https://buymeacoffee.com/georgegeorge" target="_blank" rel="noopener noreferrer" class="buy-me-a-beer">
+                🍺 Buy me a beer
+            </a>
+        </p>
     </footer>
     <!-- Modal de promoción -->
     <div id="promotion-modal" class="modal">

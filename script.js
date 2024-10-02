@@ -635,6 +635,7 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     return inCheck;
 }
 
+
 function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
     // Update castling rights when moving own king or rook
     if (piece === 'K') {
@@ -677,11 +678,17 @@ function performCastlingSimulation(color, side, tempBoard) {
 
 function isInCheck(playerColor, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
     const kingPosition = findKing(playerColor, tempBoard);
-    if (!kingPosition) return false;
-    const opponentColor = playerColor === 'white' ? 'black' : 'white';
-    const opponentMoves = getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastlingRights);
-    return opponentMoves.some(move => move[0] === kingPosition[0] && move[1] === kingPosition[1]);
+    if (!kingPosition) {
+        console.error(`King for ${playerColor} not found!`);
+        return false;
+    }
+    const opponent = opponentColor(playerColor);
+    const opponentMoves = getAllOpponentMoves(opponent, tempBoard, tempEnPassant, tempCastlingRights);
+    const inCheck = opponentMoves.some(move => move[0] === kingPosition[0] && move[1] === kingPosition[1]);
+    console.log(`Player ${playerColor} is ${inCheck ? '' : 'not '}in check.`);
+    return inCheck;
 }
+
 
 function isCheckMate(playerColor) {
     if (!isInCheck(playerColor)) return false;
@@ -689,20 +696,6 @@ function isCheckMate(playerColor) {
     return allMoves.length === 0;
 }
 
-function isStalemate(playerColor) {
-    if (isInCheck(playerColor)) return false;
-    const allMoves = getAllLegalMoves(playerColor);
-    return allMoves.length === 0;
-}
-
-function isThreefoldRepetition() {
-    for (let pos in repetitionPositions) {
-        if (repetitionPositions[pos] >= 3) {
-            return true;
-        }
-    }
-    return false;
-}
 
 function findKing(playerColor, tempBoard) {
     const king = playerColor === 'white' ? 'K' : 'k';

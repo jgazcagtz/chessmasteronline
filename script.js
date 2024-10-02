@@ -830,7 +830,6 @@ window.addEventListener('click', (e) => {
 // Iniciar el juego
 function startGame() {
     createBoard();
-    startTimer();
 }
 
 startGame();

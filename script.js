@@ -604,35 +604,21 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     let simulatedEnPassant = tempEnPassant ? { ...tempEnPassant } : null;
     let simulatedCastlingRights = JSON.parse(JSON.stringify(tempCastlingRights));
 
+    // Move the piece temporarily
     const piece = simulatedBoard[fromRow][fromCol];
-    const targetPiece = simulatedBoard[toRow][toCol];
     simulatedBoard[toRow][toCol] = piece;
     simulatedBoard[fromRow][fromCol] = '';
 
-    // Handle en passant capture
-    if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 1 && Math.abs(toCol - fromCol) === 1 && targetPiece === '' && simulatedEnPassant && simulatedEnPassant.row === toRow && simulatedEnPassant.col === toCol) {
+    // Simulate capturing en passant
+    if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 1 && Math.abs(toCol - fromCol) === 1 && simulatedBoard[toRow][toCol] === '' && simulatedEnPassant && simulatedEnPassant.row === toRow && simulatedEnPassant.col === toCol) {
         simulatedBoard[fromRow][toCol] = '';
     }
 
-    // Update en passant
-    if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 2) {
-        simulatedEnPassant = { row: (fromRow + toRow) / 2, col: fromCol };
-    } else {
-        simulatedEnPassant = null;
-    }
+    // Find the current player's king after the move
+    const kingPosition = findKing(playerColor, simulatedBoard);
 
-    // Update castling rights
-    updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, simulatedCastlingRights, simulatedBoard);
-
-    // Handle castling move
-    if (piece.toUpperCase() === 'K' && Math.abs(toCol - fromCol) === 2) {
-        const side = toCol > fromCol ? 'short' : 'long';
-        performCastlingSimulation(playerColor, side, simulatedBoard);
-    }
-
-    const inCheck = isInCheck(playerColor, simulatedBoard, simulatedEnPassant, simulatedCastlingRights);
-
-    return inCheck;
+    // Check if the king is now in check
+    return isInCheck(playerColor, simulatedBoard, simulatedEnPassant, simulatedCastlingRights);
 }
 
 
@@ -684,17 +670,25 @@ function isInCheck(playerColor, tempBoard = board, tempEnPassant = enPassant, te
     }
     const opponent = opponentColor(playerColor);
     const opponentMoves = getAllOpponentMoves(opponent, tempBoard, tempEnPassant, tempCastlingRights);
-    const inCheck = opponentMoves.some(move => move[0] === kingPosition[0] && move[1] === kingPosition[1]);
-    console.log(`Player ${playerColor} is ${inCheck ? '' : 'not '}in check.`);
-    return inCheck;
+    
+    // Check if any of the opponent's moves can capture the king
+    return opponentMoves.some(move => move[0] === kingPosition[0] && move[1] === kingPosition[1]);
 }
+
 
 
 function isCheckMate(playerColor) {
-    if (!isInCheck(playerColor)) return false;
+    if (!isInCheck(playerColor)) {
+        console.log(`${playerColor} king is not in check.`);
+        return false;
+    }
+
     const allMoves = getAllLegalMoves(playerColor);
+    console.log(`All legal moves for ${playerColor}:`, allMoves);
+
     return allMoves.length === 0;
 }
+
 
 
 function findKing(playerColor, tempBoard) {
@@ -704,8 +698,9 @@ function findKing(playerColor, tempBoard) {
             if (tempBoard[row][col] === king) return [row, col];
         }
     }
-    return null;
+    return null;  // Error handling if the king is not found
 }
+
 
 function getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastlingRights) {
     let moves = [];

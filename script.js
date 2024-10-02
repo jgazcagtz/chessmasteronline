@@ -22,7 +22,7 @@ let time = 0;
 let isGameOver = false;
 let difficultyLevel = parseInt(levelSelect.value);
 let moveHistory = [];
-let repetitionPositions = {};
+
 let enPassant = null;
 let castlingRights = {
     white: { short: true, long: true },
@@ -193,6 +193,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
 }
 
 // Función para acciones después del movimiento
+// Función para acciones después del movimiento
 function postMoveActions() {
     // Verificar jaque y jaque mate
     if (isCheckMate(opponentColor())) {
@@ -206,29 +207,6 @@ function postMoveActions() {
         highlightKing(opponentColor());
     }
 
-    // Verificar tablas
-    // Update repetition positions
-    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
-    repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
-
-    if (isThreefoldRepetition()) {
-        // Ask the user if they want to claim the draw
-        const claimDraw = confirm('Se ha repetido la misma posición tres veces. ¿Desea reclamar tablas por repetición?');
-        if (claimDraw) {
-            alert('¡Empate por repetición de posición tres veces!');
-            isGameOver = true;
-            clearInterval(gameInterval);
-            return;
-        }
-    }
-
-    if (isStalemate(opponentColor())) {
-        alert('¡Empate por ahogado!');
-        isGameOver = true;
-        clearInterval(gameInterval);
-        return;
-    }
-
     // Cambiar el turno
     currentPlayer = opponentColor();
     currentPlayerElement.textContent = currentPlayer === 'white' ? 'Blanco' : 'Negro';
@@ -240,6 +218,7 @@ function postMoveActions() {
         }, 500);
     }
 }
+
 
 // Función para actualizar los derechos de enroque
 function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights = castlingRights) {
@@ -308,6 +287,7 @@ function showPromotionModal(row, col, color) {
 }
 
 // Función para el movimiento de la computadora
+// Función para el movimiento de la computadora
 function computerMove() {
     if (isGameOver || currentPlayer !== 'black') return;
 
@@ -325,7 +305,7 @@ function computerMove() {
         if (isInCheck('black')) {
             alert('¡Jaque mate! Ganas la partida');
         } else {
-            alert('¡Empate por ahogado!');
+            alert('La computadora no puede mover pero no está en jaque. Esto no debería ocurrir.');
         }
         isGameOver = true;
         clearInterval(gameInterval);
@@ -338,17 +318,6 @@ function computerMove() {
 
     currentPlayerElement.textContent = 'Blanco';
 
-    // Update repetition positions
-    const position = board.map(row => row.join('')).join('/') + `_${currentPlayer}_${enPassant ? enPassant.row + ',' + enPassant.col : 'none'}`;
-    repetitionPositions[position] = (repetitionPositions[position] || 0) + 1;
-
-    if (isThreefoldRepetition()) {
-        alert('La computadora reclama tablas por repetición de posición tres veces.');
-        isGameOver = true;
-        clearInterval(gameInterval);
-        return;
-    }
-
     if (isCheckMate('white')) {
         checkSound.play();
         alert('¡Jaque mate! La computadora gana.');
@@ -359,18 +328,11 @@ function computerMove() {
         highlightKing('white');
     }
 
-    // Verificar tablas
-    if (isStalemate('white')) {
-        alert('¡Empate por ahogado!');
-        isGameOver = true;
-        clearInterval(gameInterval);
-        return;
-    }
-
     // Cambiar el turno de vuelta al jugador
     currentPlayer = 'white';
     currentPlayerElement.textContent = 'Blanco';
 }
+
 
 // Función para obtener un movimiento aleatorio
 function getRandomMove(color) {

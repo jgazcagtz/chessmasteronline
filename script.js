@@ -32,8 +32,8 @@ let promotionCallback = null;
 
 // Mapear las piezas a códigos Unicode
 const pieces = {
-    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',  // Black pieces
-    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'   // White pieces
+    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
 };
 
 const promotionPieces = {
@@ -52,50 +52,6 @@ const initialBoard = [
     ['P','P','P','P','P','P','P','P'],
     ['R','N','B','Q','K','B','N','R']
 ];
-
-/* --------------------- */
-/* Background Music Setup */
-/* --------------------- */
-
-// Background Music Elements and Variables
-const backgroundMusic = document.getElementById('background-music');
-const backgroundAudioSources = [
-    'https://cdn.freesound.org/previews/436/436508_8462944-lq.mp3',
-    'https://cdn.freesound.org/previews/339/339124_3162775-lq.mp3',
-    'https://cdn.freesound.org/previews/423/423805_3914271-lq.mp3',
-    'https://cdn.freesound.org/previews/436/436507_8462944-lq.mp3'
-];
-let currentBackgroundAudioIndex = 0;
-let backgroundMusicPlaying = false;
-
-// Function to play the next background audio
-function playNextBackgroundAudio() {
-    if (backgroundAudioSources.length === 0) return;
-
-    // Set the source to the current index
-    backgroundMusic.src = backgroundAudioSources[currentBackgroundAudioIndex];
-    backgroundMusic.play().catch(error => {
-        console.error('Error playing background music:', error);
-    });
-
-    // Update the index for the next audio
-    currentBackgroundAudioIndex = (currentBackgroundAudioIndex + 1) % backgroundAudioSources.length;
-}
-
-// Event listener for when the current background audio ends
-backgroundMusic.addEventListener('ended', playNextBackgroundAudio);
-
-// Function to start background music (called on user interaction)
-function startBackgroundMusic() {
-    if (!backgroundMusicPlaying) {
-        playNextBackgroundAudio();
-        backgroundMusicPlaying = true;
-    }
-}
-
-/* --------------------------- */
-/* Chess Game Functionality    */
-/* --------------------------- */
 
 // Función para crear el tablero
 function createBoard() {
@@ -128,9 +84,6 @@ function createBoard() {
             }
         }
     }
-
-    // Start background music when a new game is created
-    startBackgroundMusic();
 }
 
 // Función para seleccionar y mover piezas
@@ -146,7 +99,6 @@ function selectPiece(e) {
             movePiece(selectedPiece.row, selectedPiece.col, row, col);
             selectedPiece = null;
             clearHighlights();
-            // Turn management is now handled in postMoveActions()
         } else {
             selectedPiece = null;
             clearHighlights();
@@ -159,57 +111,45 @@ function selectPiece(e) {
 }
 
 // Función para mover piezas
-function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
-    const piece = board[fromRow][fromCol];
-    const targetPiece = board[toRow][toCol];
+function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
+    const piece = tempBoard[fromRow][fromCol];
+    const targetPiece = tempBoard[toRow][toCol];
     let moveNotation = '';
+    const color = piece === piece.toUpperCase() ? 'white' : 'black';
 
-    // Manejar enroque
     if (piece.toUpperCase() === 'K' && Math.abs(toCol - fromCol) === 2) {
         if (!isSimulation) moveSound.play();
         const side = toCol > fromCol ? 'short' : 'long';
-        performCastling(currentPlayer, side);
+        performCastlingSimulation(color, side, tempBoard);
         moveNotation = side === 'short' ? 'O-O' : 'O-O-O';
-
-        // Update castling rights after castling
-        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights);
-
+        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard);
         if (!isSimulation) {
-            enPassant = tempEnPassant;
-            castlingRights = tempCastlingRights;
-            updateBoard();
             saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, moveNotation);
             postMoveActions();
         }
     } else {
-        // Guardar para captura al paso
         const enPassantTarget = tempEnPassant;
         tempEnPassant = null;
 
-        // Captura al paso
         if (piece.toUpperCase() === 'P' && toCol !== fromCol && targetPiece === '' && enPassantTarget && enPassantTarget.row === toRow && enPassantTarget.col === toCol) {
             if (!isSimulation) captureSound.play();
-            board[fromRow][toCol] = '';
+            tempBoard[fromRow][toCol] = '';
         } else if (targetPiece !== '') {
             if (!isSimulation) captureSound.play();
         } else {
             if (!isSimulation) moveSound.play();
         }
 
-        // Actualizar enPassant
         if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 2) {
             tempEnPassant = { row: (fromRow + toRow) / 2, col: fromCol };
         } else {
             tempEnPassant = null;
         }
 
-        // Update castling rights before moving the piece
-        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights);
+        updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard);
+        tempBoard[toRow][toCol] = piece;
+        tempBoard[fromRow][fromCol] = '';
 
-        board[toRow][toCol] = piece;
-        board[fromRow][fromCol] = '';
-
-        // Manejar promoción de peones
         if ((piece === 'P' && toRow === 0) || (piece === 'p' && toRow === 7)) {
             if (!isSimulation) {
                 showPromotionModal(toRow, toCol, piece === 'P' ? 'white' : 'black');
@@ -219,7 +159,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
                 };
                 return;
             } else {
-                board[toRow][toCol] = piece === 'P' ? 'Q' : 'q';
+                tempBoard[toRow][toCol] = piece === 'P' ? 'Q' : 'q';
             }
         }
 
@@ -231,16 +171,10 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
             postMoveActions();
         }
     }
-
-    if (isSimulation) {
-        enPassant = tempEnPassant;
-        castlingRights = tempCastlingRights;
-    }
 }
 
 // Función para acciones después del movimiento
 function postMoveActions() {
-    // Verificar jaque y jaque mate
     if (isCheckMate(opponentColor())) {
         checkSound.play();
         alert(`¡Jaque mate! Gana el jugador ${currentPlayer === 'white' ? 'Blanco' : 'Negro'}`);
@@ -252,11 +186,9 @@ function postMoveActions() {
         highlightKing(opponentColor());
     }
 
-    // Cambiar el turno
     currentPlayer = opponentColor();
     currentPlayerElement.textContent = currentPlayer === 'white' ? 'Blanco' : 'Negro';
 
-    // Si es el turno de la computadora, ejecutar su movimiento
     if (!isGameOver && currentPlayer === 'black') {
         setTimeout(() => {
             computerMove();
@@ -265,8 +197,7 @@ function postMoveActions() {
 }
 
 // Función para actualizar los derechos de enroque
-function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights = castlingRights) {
-    // Update castling rights when moving own king or rook
+function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
         tempCastlingRights.white.long = false;
@@ -281,9 +212,8 @@ function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlin
         if (fromRow === 0 && fromCol === 0) tempCastlingRights.black.long = false;
     }
 
-    // Update castling rights when opponent's rook is captured
     if (toRow !== undefined && toCol !== undefined) {
-        const targetPiece = board[toRow][toCol];
+        const targetPiece = tempBoard[toRow][toCol];
         if (targetPiece === 'R') {
             if (toRow === 7 && toCol === 7) tempCastlingRights.white.short = false;
             if (toRow === 7 && toCol === 0) tempCastlingRights.white.long = false;
@@ -295,20 +225,19 @@ function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlin
 }
 
 // Función para realizar el enroque
-function performCastling(color, side) {
+function performCastlingSimulation(color, side, tempBoard) {
     const row = color === 'white' ? 7 : 0;
     if (side === 'short') {
-        board[row][6] = board[row][4];
-        board[row][4] = '';
-        board[row][5] = board[row][7];
-        board[row][7] = '';
+        tempBoard[row][6] = tempBoard[row][4];
+        tempBoard[row][4] = '';
+        tempBoard[row][5] = tempBoard[row][7];
+        tempBoard[row][7] = '';
     } else {
-        board[row][2] = board[row][4];
-        board[row][4] = '';
-        board[row][3] = board[row][0];
-        board[row][0] = '';
+        tempBoard[row][2] = tempBoard[row][4];
+        tempBoard[row][4] = '';
+        tempBoard[row][3] = tempBoard[row][0];
+        tempBoard[row][0] = '';
     }
-    updateBoard();
 }
 
 // Función para mostrar el modal de promoción
@@ -371,7 +300,6 @@ function computerMove() {
         highlightKing('white');
     }
 
-    // Cambiar el turno de vuelta al jugador
     currentPlayer = 'white';
     currentPlayerElement.textContent = 'Blanco';
 }
@@ -395,13 +323,9 @@ function getBestMove(color, depth) {
         const tempEnPassant = enPassant ? { ...enPassant } : null;
         const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
 
-        movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
+        movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempBoard, tempEnPassant, tempCastlingRights);
 
-        const score = minimax(depth - 1, -Infinity, Infinity, color === 'white' ? false : true);
-
-        board = tempBoard;
-        enPassant = tempEnPassant;
-        castlingRights = tempCastlingRights;
+        const score = minimax(depth - 1, -Infinity, Infinity, color === 'white' ? false : true, tempBoard, tempEnPassant, tempCastlingRights);
 
         if (color === 'black') {
             if (score < bestScore) {
@@ -419,37 +343,32 @@ function getBestMove(color, depth) {
 }
 
 // Implementación del algoritmo Minimax con poda alfa-beta
-function minimax(depth, alpha, beta, isMaximizingPlayer) {
+function minimax(depth, alpha, beta, isMaximizingPlayer, tempBoard, tempEnPassant, tempCastlingRights) {
     if (depth === 0 || isGameOver) {
-        return evaluateBoard();
+        return evaluateBoard(tempBoard);
     }
 
     const color = isMaximizingPlayer ? 'white' : 'black';
-    const allMoves = getAllLegalMoves(color);
+    const allMoves = getAllLegalMoves(color, tempBoard, tempEnPassant, tempCastlingRights);
 
     if (allMoves.length === 0) {
-        if (isInCheck(color)) {
+        if (isInCheck(color, tempBoard, tempEnPassant, tempCastlingRights)) {
             return isMaximizingPlayer ? -Infinity : Infinity;
         } else {
-            return 0; // Empate por ahogado
+            return 0;
         }
     }
 
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
         for (let move of allMoves) {
-            const tempBoard = JSON.parse(JSON.stringify(board));
-            const tempEnPassant = enPassant ? { ...enPassant } : null;
-            const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+            const newTempBoard = JSON.parse(JSON.stringify(tempBoard));
+            const newTempEnPassant = tempEnPassant ? { ...tempEnPassant } : null;
+            const newTempCastlingRights = JSON.parse(JSON.stringify(tempCastlingRights));
 
-            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
+            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, newTempBoard, newTempEnPassant, newTempCastlingRights);
 
-            const evalScore = minimax(depth - 1, alpha, beta, false);
-
-            board = tempBoard;
-            enPassant = tempEnPassant;
-            castlingRights = tempCastlingRights;
-
+            const evalScore = minimax(depth - 1, alpha, beta, false, newTempBoard, newTempEnPassant, newTempCastlingRights);
             maxEval = Math.max(maxEval, evalScore);
             alpha = Math.max(alpha, evalScore);
             if (beta <= alpha) break;
@@ -458,18 +377,13 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
     } else {
         let minEval = Infinity;
         for (let move of allMoves) {
-            const tempBoard = JSON.parse(JSON.stringify(board));
-            const tempEnPassant = enPassant ? { ...enPassant } : null;
-            const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+            const newTempBoard = JSON.parse(JSON.stringify(tempBoard));
+            const newTempEnPassant = tempEnPassant ? { ...tempEnPassant } : null;
+            const newTempCastlingRights = JSON.parse(JSON.stringify(tempCastlingRights));
 
-            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
+            movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, newTempBoard, newTempEnPassant, newTempCastlingRights);
 
-            const evalScore = minimax(depth - 1, alpha, beta, true);
-
-            board = tempBoard;
-            enPassant = tempEnPassant;
-            castlingRights = tempCastlingRights;
-
+            const evalScore = minimax(depth - 1, alpha, beta, true, newTempBoard, newTempEnPassant, newTempCastlingRights);
             minEval = Math.min(minEval, evalScore);
             beta = Math.min(beta, evalScore);
             if (beta <= alpha) break;
@@ -479,13 +393,13 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
 }
 
 // Función para evaluar el tablero
-function evaluateBoard() {
+function evaluateBoard(tempBoard = board) {
     const pieceValues = {
         'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': -1000,
         'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 1000
     };
     let total = 0;
-    for (let row of board) {
+    for (let row of tempBoard) {
         for (let piece of row) {
             if (piece && pieceValues[piece]) {
                 total += pieceValues[piece];
@@ -496,13 +410,13 @@ function evaluateBoard() {
 }
 
 // Función para obtener todos los movimientos legales de un color
-function getAllLegalMoves(color) {
+function getAllLegalMoves(color, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
     let moves = [];
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            const piece = board[row][col];
+            const piece = tempBoard[row][col];
             if (piece && ((color === 'white' && piece === piece.toUpperCase()) || (color === 'black' && piece === piece.toLowerCase()))) {
-                const legalMoves = getLegalMoves(row, col, color);
+                const legalMoves = getLegalMoves(row, col, color, false, tempBoard, tempEnPassant, tempCastlingRights);
                 legalMoves.forEach(move => {
                     moves.push({ from: [row, col], to: move });
                 });
@@ -541,39 +455,32 @@ function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = bo
     }
 
     if (piece.toUpperCase() === 'P') {
-        // Movimientos de peón
         const dir = isWhite ? -1 : 1;
         const startRow = isWhite ? 6 : 1;
-        // Movimiento hacia adelante
         if (isEmpty(row + dir, col, tempBoard)) {
             moves.push([row + dir, col]);
-            // Primer movimiento doble
             if (row === startRow && isEmpty(row + 2 * dir, col, tempBoard)) {
                 moves.push([row + 2 * dir, col]);
             }
         }
-        // Capturas
         [[dir, -1], [dir, 1]].forEach(([dx, dy]) => {
             const [x, y] = [row + dx, col + dy];
             if (isEnemy(x, y, isWhite, tempBoard)) {
                 moves.push([x, y]);
             }
         });
-        // Captura al paso
         if (tempEnPassant) {
             if (row + dir === tempEnPassant.row && Math.abs(col - tempEnPassant.col) === 1) {
                 moves.push([tempEnPassant.row, tempEnPassant.col]);
             }
         }
     } else if (piece.toUpperCase() === 'K') {
-        // Movimientos del rey
         directions[piece].forEach(([dx, dy]) => {
             const [x, y] = [row + dx, col + dy];
             if (isOnBoard(x, y) && !isCurrentPlayerPiece(tempBoard[x][y], playerColor)) {
                 moves.push([x, y]);
             }
         });
-        // Enroque
         if (!skipChecks) {
             if (canCastle(isWhite, 'short', tempCastlingRights)) {
                 if (isEmpty(row, col + 1, tempBoard) && isEmpty(row, col + 2, tempBoard)) {
@@ -599,7 +506,6 @@ function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = bo
             }
         }
     } else {
-        // Movimientos de otras piezas
         directions[piece].forEach(([dx, dy]) => {
             let [x, y] = [row + dx, col + dy];
             while (isOnBoard(x, y)) {
@@ -618,7 +524,6 @@ function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = bo
         });
     }
 
-    // Filtrar movimientos que dejan al rey en jaque, si skipChecks es falso
     if (!skipChecks) {
         return moves.filter(move => !leavesKingInCheck(row, col, move[0], move[1], playerColor, tempBoard, tempEnPassant, tempCastlingRights));
     } else {
@@ -646,61 +551,16 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     let simulatedEnPassant = tempEnPassant ? { ...tempEnPassant } : null;
     let simulatedCastlingRights = JSON.parse(JSON.stringify(tempCastlingRights));
 
-    // Move the piece temporarily
     const piece = simulatedBoard[fromRow][fromCol];
     simulatedBoard[toRow][toCol] = piece;
     simulatedBoard[fromRow][fromCol] = '';
 
-    // Simulate capturing en passant
     if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 1 && Math.abs(toCol - fromCol) === 1 && simulatedBoard[toRow][toCol] === '' && simulatedEnPassant && simulatedEnPassant.row === toRow && simulatedEnPassant.col === toCol) {
         simulatedBoard[fromRow][toCol] = '';
     }
 
-    // Find the current player's king after the move
     const kingPosition = findKing(playerColor, simulatedBoard);
-
-    // Check if the king is now in check
     return isInCheck(playerColor, simulatedBoard, simulatedEnPassant, simulatedCastlingRights);
-}
-
-function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
-    // Update castling rights when moving own king or rook
-    if (piece === 'K') {
-        tempCastlingRights.white.short = false;
-        tempCastlingRights.white.long = false;
-    } else if (piece === 'k') {
-        tempCastlingRights.black.short = false;
-        tempCastlingRights.black.long = false;
-    } else if (piece === 'R') {
-        if (fromRow === 7 && fromCol === 7) tempCastlingRights.white.short = false;
-        if (fromRow === 7 && fromCol === 0) tempCastlingRights.white.long = false;
-    } else if (piece === 'r') {
-        if (fromRow === 0 && fromCol === 7) tempCastlingRights.black.short = false;
-        if (fromRow === 0 && fromCol === 0) tempCastlingRights.black.long = false;
-    }
-
-    // Update castling rights when opponent's rook is captured
-    if (toRow !== undefined && toCol !== undefined) {
-        const targetPiece = tempBoard[toRow][toCol];
-        if (targetPiece === 'R') {
-            if (toRow === 7 && toCol === 7) tempCastlingRights.white.short = false;
-            if (toRow === 7 && toCol === 0) tempCastlingRights.white.long = false;
-        } else if (targetPiece === 'r') {
-            if (toRow === 0 && toCol === 7) tempCastlingRights.black.short = false;
-            if (toRow === 0 && toCol === 0) tempCastlingRights.black.long = false;
-        }
-    }
-}
-
-function performCastlingSimulation(color, side, tempBoard) {
-    const row = color === 'white' ? 7 : 0;
-    if (side === 'short') {
-        tempBoard[row][5] = tempBoard[row][7];
-        tempBoard[row][7] = '';
-    } else {
-        tempBoard[row][3] = tempBoard[row][0];
-        tempBoard[row][0] = '';
-    }
 }
 
 function isInCheck(playerColor, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
@@ -711,20 +571,14 @@ function isInCheck(playerColor, tempBoard = board, tempEnPassant = enPassant, te
     }
     const opponent = opponentColor(playerColor);
     const opponentMoves = getAllOpponentMoves(opponent, tempBoard, tempEnPassant, tempCastlingRights);
-    
-    // Check if any of the opponent's moves can capture the king
     return opponentMoves.some(move => move[0] === kingPosition[0] && move[1] === kingPosition[1]);
 }
 
 function isCheckMate(playerColor) {
     if (!isInCheck(playerColor)) {
-        console.log(`${playerColor} king is not in check.`);
         return false;
     }
-
     const allMoves = getAllLegalMoves(playerColor);
-    console.log(`All legal moves for ${playerColor}:`, allMoves);
-
     return allMoves.length === 0;
 }
 
@@ -735,7 +589,7 @@ function findKing(playerColor, tempBoard) {
             if (tempBoard[row][col] === king) return [row, col];
         }
     }
-    return null;  // Error handling if the king is not found
+    return null;
 }
 
 function getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastlingRights) {
@@ -744,7 +598,7 @@ function getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastli
         for (let col = 0; col < 8; col++) {
             const piece = tempBoard[row][col];
             if (piece && ((opponentColor === 'white' && piece === piece.toUpperCase()) || (opponentColor === 'black' && piece === piece.toLowerCase()))) {
-                const pieceMoves = getLegalMoves(row, col, opponentColor, true, tempBoard, tempEnPassant, tempCastlingRights); // skipChecks = true
+                const pieceMoves = getLegalMoves(row, col, opponentColor, true, tempBoard, tempEnPassant, tempCastlingRights);
                 moves = moves.concat(pieceMoves);
             }
         }
@@ -809,8 +663,8 @@ function isCurrentPlayerPiece(piece, playerColor = currentPlayer) {
 }
 
 // Obtener el color del oponente
-function opponentColor(current = currentPlayer) {
-    return current === 'white' ? 'black' : 'white';
+function opponentColor(playerColor = currentPlayer) {
+    return playerColor === 'white' ? 'black' : 'white';
 }
 
 // Iniciar el temporizador

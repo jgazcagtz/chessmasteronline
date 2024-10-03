@@ -53,12 +53,55 @@ const initialBoard = [
     ['R','N','B','Q','K','B','N','R']
 ];
 
+/* --------------------- */
+/* Background Music Setup */
+/* --------------------- */
+
+// Background Music Elements and Variables
+const backgroundMusic = document.getElementById('background-music');
+const backgroundAudioSources = [
+    'https://cdn.freesound.org/previews/436/436508_8462944-lq.mp3',
+    'https://cdn.freesound.org/previews/339/339124_3162775-lq.mp3',
+    'https://cdn.freesound.org/previews/423/423805_3914271-lq.mp3',
+    'https://cdn.freesound.org/previews/436/436507_8462944-lq.mp3'
+];
+let currentBackgroundAudioIndex = 0;
+let backgroundMusicPlaying = false;
+
+// Function to play the next background audio
+function playNextBackgroundAudio() {
+    if (backgroundAudioSources.length === 0) return;
+
+    // Set the source to the current index
+    backgroundMusic.src = backgroundAudioSources[currentBackgroundAudioIndex];
+    backgroundMusic.play().catch(error => {
+        console.error('Error playing background music:', error);
+    });
+
+    // Update the index for the next audio
+    currentBackgroundAudioIndex = (currentBackgroundAudioIndex + 1) % backgroundAudioSources.length;
+}
+
+// Event listener for when the current background audio ends
+backgroundMusic.addEventListener('ended', playNextBackgroundAudio);
+
+// Function to start background music (called on user interaction)
+function startBackgroundMusic() {
+    if (!backgroundMusicPlaying) {
+        playNextBackgroundAudio();
+        backgroundMusicPlaying = true;
+    }
+}
+
+/* --------------------------- */
+/* Chess Game Functionality    */
+/* --------------------------- */
+
 // Función para crear el tablero
 function createBoard() {
     boardElement.innerHTML = '';
     board = JSON.parse(JSON.stringify(initialBoard));
     moveHistory = [];
-    repetitionPositions = {};
     time = 0;
     isGameOver = false;
     currentPlayer = 'white';
@@ -85,6 +128,9 @@ function createBoard() {
             }
         }
     }
+
+    // Start background music when a new game is created
+    startBackgroundMusic();
 }
 
 // Función para seleccionar y mover piezas
@@ -193,7 +239,6 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempEnP
 }
 
 // Función para acciones después del movimiento
-// Función para acciones después del movimiento
 function postMoveActions() {
     // Verificar jaque y jaque mate
     if (isCheckMate(opponentColor())) {
@@ -218,7 +263,6 @@ function postMoveActions() {
         }, 500);
     }
 }
-
 
 // Función para actualizar los derechos de enroque
 function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights = castlingRights) {
@@ -287,7 +331,6 @@ function showPromotionModal(row, col, color) {
 }
 
 // Función para el movimiento de la computadora
-// Función para el movimiento de la computadora
 function computerMove() {
     if (isGameOver || currentPlayer !== 'black') return;
 
@@ -332,7 +375,6 @@ function computerMove() {
     currentPlayer = 'white';
     currentPlayerElement.textContent = 'Blanco';
 }
-
 
 // Función para obtener un movimiento aleatorio
 function getRandomMove(color) {
@@ -402,14 +444,14 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
 
             movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
 
-            const eval = minimax(depth - 1, alpha, beta, false);
+            const evalScore = minimax(depth - 1, alpha, beta, false);
 
             board = tempBoard;
             enPassant = tempEnPassant;
             castlingRights = tempCastlingRights;
 
-            maxEval = Math.max(maxEval, eval);
-            alpha = Math.max(alpha, eval);
+            maxEval = Math.max(maxEval, evalScore);
+            alpha = Math.max(alpha, evalScore);
             if (beta <= alpha) break;
         }
         return maxEval;
@@ -422,14 +464,14 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
 
             movePiece(move.from[0], move.from[1], move.to[0], move.to[1], true, tempEnPassant, tempCastlingRights);
 
-            const eval = minimax(depth - 1, alpha, beta, true);
+            const evalScore = minimax(depth - 1, alpha, beta, true);
 
             board = tempBoard;
             enPassant = tempEnPassant;
             castlingRights = tempCastlingRights;
 
-            minEval = Math.min(minEval, eval);
-            beta = Math.min(beta, eval);
+            minEval = Math.min(minEval, evalScore);
+            beta = Math.min(beta, evalScore);
             if (beta <= alpha) break;
         }
         return minEval;
@@ -621,7 +663,6 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
     return isInCheck(playerColor, simulatedBoard, simulatedEnPassant, simulatedCastlingRights);
 }
 
-
 function updateCastlingRightsSimulation(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
     // Update castling rights when moving own king or rook
     if (piece === 'K') {
@@ -675,8 +716,6 @@ function isInCheck(playerColor, tempBoard = board, tempEnPassant = enPassant, te
     return opponentMoves.some(move => move[0] === kingPosition[0] && move[1] === kingPosition[1]);
 }
 
-
-
 function isCheckMate(playerColor) {
     if (!isInCheck(playerColor)) {
         console.log(`${playerColor} king is not in check.`);
@@ -689,8 +728,6 @@ function isCheckMate(playerColor) {
     return allMoves.length === 0;
 }
 
-
-
 function findKing(playerColor, tempBoard) {
     const king = playerColor === 'white' ? 'K' : 'k';
     for (let row = 0; row < 8; row++) {
@@ -700,7 +737,6 @@ function findKing(playerColor, tempBoard) {
     }
     return null;  // Error handling if the king is not found
 }
-
 
 function getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastlingRights) {
     let moves = [];
@@ -773,8 +809,8 @@ function isCurrentPlayerPiece(piece, playerColor = currentPlayer) {
 }
 
 // Obtener el color del oponente
-function opponentColor() {
-    return currentPlayer === 'white' ? 'black' : 'white';
+function opponentColor(current = currentPlayer) {
+    return current === 'white' ? 'black' : 'white';
 }
 
 // Iniciar el temporizador

@@ -37,7 +37,7 @@ let promotionCallback = null;
 // Online Mode Variables
 let gameId = null;
 let playerColorOnline = null; // 'white' or 'black'
-const backendUrl = 'https://script.google.com/macros/s/AKfycbzBJley_mLTFOTgBlY67oo4QolFEVwzIiqwIMonHaa9q34AUp8YBYZ5CdRZ0e8pjCiG2A/exec'; // Your Apps Script URL
+const backendUrl = 'https://script.google.com/macros/s/AKfycbz-Bz7FgDqqqW_K9kIN8DL66Np2JjYJAr2i7vHATIgDp6erQD9sVhEQ_oTOHMIi4nytsA/exec'; // Your Apps Script URL
 let pollingInterval = null;
 
 // Piece Unicode Mapping
@@ -66,20 +66,22 @@ const initialBoard = [
 // Function to create the board
 function createBoard() {
     boardElement.innerHTML = '';
-    board = JSON.parse(JSON.stringify(initialBoard));
-    moveHistory = [];
-    time = 0;
-    isGameOver = false;
-    currentPlayer = 'white';
-    currentPlayerElement.textContent = '⚪ Blanco';
-    enPassant = null;
-    castlingRights = {
-        white: { short: true, long: true },
-        black: { short: true, long: true }
-    };
-    historyList.innerHTML = '';
-    clearInterval(gameInterval);
-    startTimer();
+    if (gameMode !== 'online' || (gameMode === 'online' && playerColorOnline === 'white' && !gameId)) {
+        board = JSON.parse(JSON.stringify(initialBoard));
+        moveHistory = [];
+        time = 0;
+        isGameOver = false;
+        currentPlayer = 'white';
+        currentPlayerElement.textContent = '⚪ Blanco';
+        enPassant = null;
+        castlingRights = {
+            white: { short: true, long: true },
+            black: { short: true, long: true }
+        };
+        historyList.innerHTML = '';
+        clearInterval(gameInterval);
+        startTimer();
+    }
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
             const square = document.createElement('div');
@@ -94,8 +96,7 @@ function createBoard() {
             }
         }
     }
-    if (gameMode === 'online' && playerColorOnline === 'black') {
-        // If joining player, get the latest game state from backend
+    if (gameMode === 'online') {
         fetchGameState();
     }
 }
@@ -861,13 +862,19 @@ function startPolling() {
 function createOnlineGame() {
     const action = prompt('Escribe "crear" para iniciar una nueva partida o "unir" para unirte a una partida existente:').toLowerCase();
     if (action === 'crear') {
+        // Choose color
+        const colorChoice = prompt('Elige tu color: "blanco" o "negro":').toLowerCase();
+        if (colorChoice !== 'blanco' && colorChoice !== 'negro') {
+            alert('Color no válido. Por favor, escribe "blanco" o "negro".');
+            return;
+        }
+        playerColorOnline = colorChoice === 'blanco' ? 'white' : 'black';
         // Create a new game
-        fetch(`${backendUrl}?action=createGame`)
+        fetch(`${backendUrl}?action=createGame&playerColor=${playerColorOnline}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 gameId = data.gameId;
-                playerColorOnline = 'white'; // Creator plays as white
                 alert(`Juego creado. ID de la partida: ${gameId}. Comparte este ID con tu oponente.`);
                 createBoard();
                 startPolling();
@@ -881,17 +888,23 @@ function createOnlineGame() {
     } else if (action === 'unir') {
         // Join an existing game
         const inputGameId = prompt('Introduce el ID de la partida:');
-        fetch(`${backendUrl}?action=joinGame&gameId=${inputGameId}`)
+        // Choose color
+        const colorChoice = prompt('Elige tu color: "blanco" o "negro":').toLowerCase();
+        if (colorChoice !== 'blanco' && colorChoice !== 'negro') {
+            alert('Color no válido. Por favor, escribe "blanco" o "negro".');
+            return;
+        }
+        playerColorOnline = colorChoice === 'blanco' ? 'white' : 'black';
+        fetch(`${backendUrl}?action=joinGame&gameId=${inputGameId}&playerColor=${playerColorOnline}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 gameId = inputGameId;
-                playerColorOnline = 'black'; // Joiner plays as black
                 alert('Te has unido a la partida.');
                 createBoard();
                 startPolling();
             } else {
-                alert('No se pudo unir a la partida. Verifica el ID.');
+                alert('No se pudo unir a la partida. Verifica el ID y el color elegido.');
             }
         })
         .catch(error => {

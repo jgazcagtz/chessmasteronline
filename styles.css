@@ -45,12 +45,14 @@ h1 {
 }
 
 #mode-selection {
+  font-family: "Eagle Lake", serif, "Uncial Antiqua", sans-serif;
     display: flex;
     gap: 10px;
     margin: 5px 10px;
 }
 
 #mode-selection button {
+  font-family: "Eagle Lake", serif, "Uncial Antiqua", sans-serif;
     padding: 8px 12px;
     font-size: clamp(14px, 2vw, 16px);
     cursor: pointer;
@@ -67,6 +69,7 @@ h1 {
 }
 
 #new-game-btn {
+  font-family: "Eagle Lake", serif, "Uncial Antiqua", sans-serif;
     margin: 5px 10px;
     padding: 8px 20px;
     font-size: clamp(14px, 2vw, 16px);

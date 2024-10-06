@@ -1,7 +1,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ChessMaster ♟️ - Juego de Ajedrez</title>
+    <title>🧙‍♂️ ChessMaster - Juego de Ajedrez</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Estilos CSS -->
     <link rel="stylesheet" href="styles.css">
@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Eagle+Lake&family=Uncial+Antiqua&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>🧙‍♂️ChessMaster♟️</h1>
+    <h1>🧙‍♂️ ChessMaster</h1>
     <div id="game-info">
         <div id="current-player">🔄 Turno: <span id="player-color">⚪ Blanco</span></div>
         <div id="timer">⏳ Tiempo: <span id="time">00:00</span></div>
@@ -25,6 +25,12 @@
                 <option value="2" selected>🛡️ 2</option>
                 <option value="3">⚔️ 3</option>
             </select>
+        </div>
+        <div id="mode-selection">
+          <button id="computer-btn">👤 Un Jugador</button>
+            <button id="two-player-btn">👥 Dos Jugadores</button>
+          <button id="online-btn">🌐 En Línea (próximamente)</button>
+
         </div>
         <button id="new-game-btn">💀 Nueva Partida</button>
     </div>
@@ -57,8 +63,9 @@
     <audio id="check-sound" src="sounds/check.mp3"></audio>
     <!-- Scripts -->
     <script src="script.js"></script>
-  <!-- Background Music -->
-<audio id="background-music" loop></audio>
-
+    <!-- Background Music -->
+    <audio id="background-music" loop>
+        <!-- Puedes agregar una fuente de música de fondo aquí -->
+    </audio>
 </body>
 </html>

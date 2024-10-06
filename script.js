@@ -37,7 +37,7 @@ let promotionCallback = null;
 // Online Mode Variables
 let gameId = null;
 let playerColorOnline = null; // 'white' or 'black'
-const backendUrl = 'https://script.google.com/macros/s/AKfycbz-Bz7FgDqqqW_K9kIN8DL66Np2JjYJAr2i7vHATIgDp6erQD9sVhEQ_oTOHMIi4nytsA/exec'; // Your Apps Script URL
+const backendUrl = 'https://script.google.com/macros/s/AKfycbzxzMc5tIuBo-KVN1q8ad1Dd5fuQdpD2FQXSpNiorEE4GakVpkw62H5uFcGDeXH-Y91nQ/exec'; // Your Apps Script URL
 let pollingInterval = null;
 
 // Piece Unicode Mapping

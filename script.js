@@ -1,4 +1,4 @@
-// Variables de interfaz
+// Interface Variables
 const boardElement = document.getElementById('board');
 const currentPlayerElement = document.getElementById('player-color');
 const timerElement = document.getElementById('time');
@@ -7,19 +7,23 @@ const newGameBtn = document.getElementById('new-game-btn');
 const promotionModal = document.getElementById('promotion-modal');
 const promotionOptions = document.getElementById('promotion-options');
 const historyList = document.getElementById('history-list');
+const twoPlayerBtn = document.getElementById('two-player-btn');
+const computerBtn = document.getElementById('computer-btn');
+const onlineBtn = document.getElementById('online-btn'); // Ensure this button is added to your HTML
 
-// Sonidos
+// Sounds
 const moveSound = document.getElementById('move-sound');
 const captureSound = document.getElementById('capture-sound');
 const checkSound = document.getElementById('check-sound');
 
-// Variables del juego
+// Game Variables
 let board = [];
 let selectedPiece = null;
 let currentPlayer = 'white';
 let gameInterval;
 let time = 0;
 let isGameOver = false;
+let gameMode = 'computer'; // 'computer', 'two-player', or 'online'
 let difficultyLevel = parseInt(levelSelect.value);
 let moveHistory = [];
 
@@ -30,7 +34,13 @@ let castlingRights = {
 };
 let promotionCallback = null;
 
-// Mapear las piezas a códigos Unicode
+// Online Mode Variables
+let gameId = null;
+let playerColorOnline = null; // 'white' or 'black'
+const backendUrl = 'https://script.google.com/macros/s/AKfycbzBJley_mLTFOTgBlY67oo4QolFEVwzIiqwIMonHaa9q34AUp8YBYZ5CdRZ0e8pjCiG2A/exec'; // Your Apps Script URL
+let pollingInterval = null;
+
+// Piece Unicode Mapping
 const pieces = {
     'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
     'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
@@ -41,7 +51,7 @@ const promotionPieces = {
     'black': ['q', 'r', 'b', 'n']
 };
 
-// Inicializar el tablero con la posición estándar
+// Initialize the board with the standard position
 const initialBoard = [
     ['r','n','b','q','k','b','n','r'],
     ['p','p','p','p','p','p','p','p'],
@@ -53,7 +63,7 @@ const initialBoard = [
     ['R','N','B','Q','K','B','N','R']
 ];
 
-// Función para crear el tablero
+// Function to create the board
 function createBoard() {
     boardElement.innerHTML = '';
     board = JSON.parse(JSON.stringify(initialBoard));
@@ -61,7 +71,7 @@ function createBoard() {
     time = 0;
     isGameOver = false;
     currentPlayer = 'white';
-    currentPlayerElement.textContent = 'Blanco';
+    currentPlayerElement.textContent = '⚪ Blanco';
     enPassant = null;
     castlingRights = {
         white: { short: true, long: true },
@@ -84,11 +94,18 @@ function createBoard() {
             }
         }
     }
+    if (gameMode === 'online' && playerColorOnline === 'black') {
+        // If joining player, get the latest game state from backend
+        fetchGameState();
+    }
 }
 
-// Función para seleccionar y mover piezas
+// Function to select and move pieces
 function selectPiece(e) {
-    if (isGameOver || currentPlayer !== 'white') return;
+    if (isGameOver) return;
+    if (gameMode === 'online' && currentPlayer !== playerColorOnline) {
+        return; // Not this player's turn
+    }
     const row = parseInt(e.currentTarget.dataset.row);
     const col = parseInt(e.currentTarget.dataset.col);
     const piece = board[row][col];
@@ -100,6 +117,10 @@ function selectPiece(e) {
             selectedPiece = null;
             clearHighlights();
         } else {
+            const previouslySelectedSquare = document.querySelector('.selected');
+            if (previouslySelectedSquare) {
+                previouslySelectedSquare.classList.remove('selected');
+            }
             selectedPiece = null;
             clearHighlights();
         }
@@ -110,7 +131,7 @@ function selectPiece(e) {
     }
 }
 
-// Función para mover piezas
+// Function to move pieces
 function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
     const piece = tempBoard[fromRow][fromCol];
     const targetPiece = tempBoard[toRow][toCol];
@@ -171,15 +192,28 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoa
             postMoveActions();
         }
     }
+
+    if (!isSimulation) {
+        if (gameMode === 'online') {
+            sendMoveToServer({
+                boardState: JSON.stringify(board),
+                currentPlayer,
+                enPassant,
+                castlingRights,
+                moveHistory
+            });
+        }
+    }
 }
 
-// Función para acciones después del movimiento
+// Function for actions after moving
 function postMoveActions() {
     if (isCheckMate(opponentColor())) {
         checkSound.play();
         alert(`¡Jaque mate! Gana el jugador ${currentPlayer === 'white' ? 'Blanco' : 'Negro'}`);
         isGameOver = true;
         clearInterval(gameInterval);
+        if (pollingInterval) clearInterval(pollingInterval);
         return;
     } else if (isInCheck(opponentColor())) {
         checkSound.play();
@@ -187,16 +221,16 @@ function postMoveActions() {
     }
 
     currentPlayer = opponentColor();
-    currentPlayerElement.textContent = currentPlayer === 'white' ? 'Blanco' : 'Negro';
+    currentPlayerElement.textContent = currentPlayer === 'white' ? '⚪ Blanco' : '⚫ Negro';
 
-    if (!isGameOver && currentPlayer === 'black') {
+    if (!isGameOver && gameMode === 'computer' && currentPlayer === 'black') {
         setTimeout(() => {
             computerMove();
         }, 500);
     }
 }
 
-// Función para actualizar los derechos de enroque
+// Function to update castling rights
 function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard) {
     if (piece === 'K') {
         tempCastlingRights.white.short = false;
@@ -224,7 +258,7 @@ function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlin
     }
 }
 
-// Función para realizar el enroque
+// Function to perform castling
 function performCastlingSimulation(color, side, tempBoard) {
     const row = color === 'white' ? 7 : 0;
     if (side === 'short') {
@@ -240,9 +274,9 @@ function performCastlingSimulation(color, side, tempBoard) {
     }
 }
 
-// Función para mostrar el modal de promoción
+// Function to show promotion modal
 function showPromotionModal(row, col, color) {
-    promotionModal.style.display = 'block';
+    promotionModal.style.display = 'flex';
     promotionOptions.innerHTML = '';
 
     promotionPieces[color].forEach(piece => {
@@ -259,7 +293,7 @@ function showPromotionModal(row, col, color) {
     });
 }
 
-// Función para el movimiento de la computadora
+// Function for computer move
 function computerMove() {
     if (isGameOver || currentPlayer !== 'black') return;
 
@@ -288,7 +322,7 @@ function computerMove() {
 
     if (isGameOver) return;
 
-    currentPlayerElement.textContent = 'Blanco';
+    currentPlayerElement.textContent = '⚪ Blanco';
 
     if (isCheckMate('white')) {
         checkSound.play();
@@ -301,17 +335,17 @@ function computerMove() {
     }
 
     currentPlayer = 'white';
-    currentPlayerElement.textContent = 'Blanco';
+    currentPlayerElement.textContent = '⚪ Blanco';
 }
 
-// Función para obtener un movimiento aleatorio
+// Function to get random move
 function getRandomMove(color) {
     const allMoves = getAllLegalMoves(color);
     if (allMoves.length === 0) return null;
     return allMoves[Math.floor(Math.random() * allMoves.length)];
 }
 
-// Función para obtener el mejor movimiento usando Minimax
+// Function to get the best move using Minimax
 function getBestMove(color, depth) {
     let bestMove = null;
     let bestScore = color === 'white' ? -Infinity : Infinity;
@@ -342,7 +376,7 @@ function getBestMove(color, depth) {
     return bestMove;
 }
 
-// Implementación del algoritmo Minimax con poda alfa-beta
+// Minimax algorithm with alpha-beta pruning
 function minimax(depth, alpha, beta, isMaximizingPlayer, tempBoard, tempEnPassant, tempCastlingRights) {
     if (depth === 0 || isGameOver) {
         return evaluateBoard(tempBoard);
@@ -392,7 +426,7 @@ function minimax(depth, alpha, beta, isMaximizingPlayer, tempBoard, tempEnPassan
     }
 }
 
-// Función para evaluar el tablero
+// Function to evaluate the board
 function evaluateBoard(tempBoard = board) {
     const pieceValues = {
         'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': -1000,
@@ -409,7 +443,7 @@ function evaluateBoard(tempBoard = board) {
     return total;
 }
 
-// Función para obtener todos los movimientos legales de un color
+// Function to get all legal moves of a color
 function getAllLegalMoves(color, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
     let moves = [];
     for (let row = 0; row < 8; row++) {
@@ -426,7 +460,7 @@ function getAllLegalMoves(color, tempBoard = board, tempEnPassant = enPassant, t
     return moves;
 }
 
-// Función para obtener movimientos legales de una pieza
+// Function to get legal moves of a piece
 function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
     const piece = tempBoard[row][col];
     const moves = [];
@@ -531,7 +565,7 @@ function getLegalMoves(row, col, playerColor, skipChecks = false, tempBoard = bo
     }
 }
 
-// Funciones auxiliares para movimientos
+// Auxiliary functions for movements
 function isEmpty(row, col, tempBoard = board) {
     return isOnBoard(row, col) && tempBoard[row][col] === '';
 }
@@ -606,14 +640,14 @@ function getAllOpponentMoves(opponentColor, tempBoard, tempEnPassant, tempCastli
     return moves;
 }
 
-// Direcciones de movimiento
+// Movement directions
 function rookDirections() { return [[-1,0],[1,0],[0,-1],[0,1]]; }
 function bishopDirections() { return [[-1,-1],[-1,1],[1,-1],[1,1]]; }
 function queenDirections() { return rookDirections().concat(bishopDirections()); }
 function knightDirections() { return [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]; }
 function kingDirections() { return [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]; }
 
-// Función para verificar si se puede enrocar
+// Function to check if castling is possible
 function canCastle(isWhite, side, tempCastlingRights = castlingRights) {
     if (isWhite) {
         if (side === 'short') return tempCastlingRights.white.short;
@@ -625,7 +659,7 @@ function canCastle(isWhite, side, tempCastlingRights = castlingRights) {
     return false;
 }
 
-// Resaltar movimientos posibles
+// Highlight possible moves
 function highlightMoves(moves) {
     moves.forEach(([row, col]) => {
         const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
@@ -647,7 +681,7 @@ function highlightKing(playerColor) {
     }
 }
 
-// Actualizar el tablero
+// Update the board
 function updateBoard() {
     document.querySelectorAll('.square').forEach(square => {
         const row = parseInt(square.dataset.row);
@@ -657,17 +691,17 @@ function updateBoard() {
     });
 }
 
-// Verificar si la pieza pertenece al jugador actual
+// Check if the piece belongs to the current player
 function isCurrentPlayerPiece(piece, playerColor = currentPlayer) {
     return playerColor === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
 }
 
-// Obtener el color del oponente
+// Get the opponent's color
 function opponentColor(playerColor = currentPlayer) {
     return playerColor === 'white' ? 'black' : 'white';
 }
 
-// Iniciar el temporizador
+// Start the timer
 function startTimer() {
     gameInterval = setInterval(() => {
         time++;
@@ -677,7 +711,7 @@ function startTimer() {
     }, 1000);
 }
 
-// Guardar notación de movimiento
+// Save move notation
 function saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, specialMove) {
     let notation = specialMove || '';
     if (!notation) {
@@ -693,27 +727,194 @@ function saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, sp
     listItem.textContent = notation;
     historyList.appendChild(listItem);
     historyList.scrollTop = historyList.scrollHeight;
+
+    if (gameMode === 'online') {
+        moveHistory.push(notation);
+    }
 }
 
-// Actualizar el nivel de dificultad
+// Update move history
+function updateMoveHistory() {
+    historyList.innerHTML = '';
+    moveHistory.forEach(notation => {
+        const listItem = document.createElement('li');
+        listItem.textContent = notation;
+        historyList.appendChild(listItem);
+    });
+    historyList.scrollTop = historyList.scrollHeight;
+}
+
+// Update the difficulty level (only for computer)
 levelSelect.addEventListener('change', () => {
     difficultyLevel = parseInt(levelSelect.value);
 });
 
-// Botón de nuevo juego
+// New game button
 newGameBtn.addEventListener('click', () => {
+    if (gameMode === 'online') {
+        // Reset online game
+        createOnlineGame();
+    } else {
+        createBoard();
+    }
+});
+
+// Mode selection buttons
+twoPlayerBtn.addEventListener('click', () => {
+    gameMode = 'two-player';
+    twoPlayerBtn.style.backgroundColor = '#17a2b8';
+    computerBtn.style.backgroundColor = '#28a745';
+    onlineBtn.style.backgroundColor = '#28a745';
+    if (pollingInterval) clearInterval(pollingInterval);
     createBoard();
 });
 
-// Cerrar modal de promoción al hacer clic fuera
+computerBtn.addEventListener('click', () => {
+    gameMode = 'computer';
+    computerBtn.style.backgroundColor = '#17a2b8';
+    twoPlayerBtn.style.backgroundColor = '#28a745';
+    onlineBtn.style.backgroundColor = '#28a745';
+    if (pollingInterval) clearInterval(pollingInterval);
+    createBoard();
+});
+
+// Online mode button
+onlineBtn.addEventListener('click', () => {
+    gameMode = 'online';
+    onlineBtn.style.backgroundColor = '#17a2b8';
+    computerBtn.style.backgroundColor = '#28a745';
+    twoPlayerBtn.style.backgroundColor = '#28a745';
+    if (pollingInterval) clearInterval(pollingInterval);
+    createOnlineGame();
+});
+
+// Function to send move to server
+function sendMoveToServer(moveData) {
+    fetch(`${backendUrl}?action=makeMove&gameId=${gameId}`, {
+        method: 'POST',
+        body: JSON.stringify(moveData),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Error al enviar el movimiento al servidor.');
+        }
+    })
+    .catch(error => {
+        console.error('Error al enviar el movimiento al servidor:', error);
+    });
+}
+
+// Function to fetch game state from server
+function fetchGameState() {
+    fetch(`${backendUrl}?action=getGameState&gameId=${gameId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the game state
+            board = JSON.parse(data.boardState); // Parse the boardState string
+            currentPlayer = data.currentPlayer;
+            enPassant = data.enPassant;
+            castlingRights = data.castlingRights;
+            moveHistory = data.moveHistory;
+            updateBoard();
+            updateMoveHistory();
+            currentPlayerElement.textContent = currentPlayer === 'white' ? '⚪ Blanco' : '⚫ Negro';
+            if (currentPlayer === playerColorOnline) {
+                // It's the player's turn
+                if (isCheckMate(playerColorOnline)) {
+                    checkSound.play();
+                    alert('¡Jaque mate! Has perdido.');
+                    isGameOver = true;
+                    clearInterval(gameInterval);
+                    clearInterval(pollingInterval);
+                } else if (isInCheck(playerColorOnline)) {
+                    checkSound.play();
+                    highlightKing(playerColorOnline);
+                }
+            }
+        } else {
+            alert('Error al obtener el estado del juego.');
+        }
+    })
+    .catch(error => {
+        console.error('Error al obtener el estado del juego:', error);
+    });
+}
+
+// Function to start polling for opponent moves
+function startPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(() => {
+        if (isGameOver) {
+            clearInterval(pollingInterval);
+            return;
+        }
+        fetchGameState();
+    }, 3000); // Poll every 3 seconds
+}
+
+// Function to create or join an online game
+function createOnlineGame() {
+    const action = prompt('Escribe "crear" para iniciar una nueva partida o "unir" para unirte a una partida existente:').toLowerCase();
+    if (action === 'crear') {
+        // Create a new game
+        fetch(`${backendUrl}?action=createGame`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                gameId = data.gameId;
+                playerColorOnline = 'white'; // Creator plays as white
+                alert(`Juego creado. ID de la partida: ${gameId}. Comparte este ID con tu oponente.`);
+                createBoard();
+                startPolling();
+            } else {
+                alert('Error al crear el juego.');
+            }
+        })
+        .catch(error => {
+            console.error('Error al crear el juego:', error);
+        });
+    } else if (action === 'unir') {
+        // Join an existing game
+        const inputGameId = prompt('Introduce el ID de la partida:');
+        fetch(`${backendUrl}?action=joinGame&gameId=${inputGameId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                gameId = inputGameId;
+                playerColorOnline = 'black'; // Joiner plays as black
+                alert('Te has unido a la partida.');
+                createBoard();
+                startPolling();
+            } else {
+                alert('No se pudo unir a la partida. Verifica el ID.');
+            }
+        })
+        .catch(error => {
+            console.error('Error al unirse al juego:', error);
+        });
+    } else {
+        alert('Acción no reconocida. Por favor, escribe "crear" o "unir".');
+    }
+}
+
+// Close promotion modal when clicking outside
 window.addEventListener('click', (e) => {
     if (e.target === promotionModal) {
         promotionModal.style.display = 'none';
     }
 });
 
-// Iniciar el juego
+// Start the game with default mode
 function startGame() {
+    gameMode = 'computer';
+    computerBtn.style.backgroundColor = '#17a2b8';
+    twoPlayerBtn.style.backgroundColor = '#28a745';
+    onlineBtn.style.backgroundColor = '#28a745';
     createBoard();
 }
 

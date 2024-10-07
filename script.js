@@ -1,3 +1,24 @@
+// Import Firebase functions
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+// Your web app's Firebase configuration (replace with your actual config)
+const firebaseConfig = {
+    apiKey: "AIzaSyBvPI19vl8bX__rObqMn9upnevzpA0D3k4",
+    authDomain: "onlinechessgame-4bc01.firebaseapp.com",
+    projectId: "onlinechessgame-4bc01",
+    storageBucket: "onlinechessgame-4bc01.appspot.com",
+    messagingSenderId: "983673203004",
+    appId: "1:983673203004:web:bd9c0583ba541792a11639"
+  };
+
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// Initialize Firestore
+const db = getFirestore(app);
+
 // Interface Variables
 const boardElement = document.getElementById('board');
 const currentPlayerElement = document.getElementById('player-color');
@@ -9,7 +30,7 @@ const promotionOptions = document.getElementById('promotion-options');
 const historyList = document.getElementById('history-list');
 const twoPlayerBtn = document.getElementById('two-player-btn');
 const computerBtn = document.getElementById('computer-btn');
-const onlineBtn = document.getElementById('online-btn'); // Ensure this button is added to your HTML
+const onlineBtn = document.getElementById('online-btn');
 
 // Sounds
 const moveSound = document.getElementById('move-sound');
@@ -37,8 +58,7 @@ let promotionCallback = null;
 // Online Mode Variables
 let gameId = null;
 let playerColorOnline = null; // 'white' or 'black'
-const backendUrl = 'https://script.google.com/macros/s/AKfycbzxzMc5tIuBo-KVN1q8ad1Dd5fuQdpD2FQXSpNiorEE4GakVpkw62H5uFcGDeXH-Y91nQ/exec'; // Your Apps Script URL
-let pollingInterval = null;
+let gameUnsubscribe = null; // To unsubscribe from Firestore listener
 
 // Piece Unicode Mapping
 const pieces = {
@@ -66,7 +86,7 @@ const initialBoard = [
 // Function to create the board
 function createBoard() {
     boardElement.innerHTML = '';
-    if (gameMode !== 'online' || (gameMode === 'online' && playerColorOnline === 'white' && !gameId)) {
+    if (gameMode !== 'online') {
         board = JSON.parse(JSON.stringify(initialBoard));
         moveHistory = [];
         time = 0;
@@ -95,9 +115,6 @@ function createBoard() {
                 square.innerHTML = `<span class="piece">${pieces[board[i][j]]}</span>`;
             }
         }
-    }
-    if (gameMode === 'online') {
-        fetchGameState();
     }
 }
 
@@ -133,7 +150,7 @@ function selectPiece(e) {
 }
 
 // Function to move pieces
-function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
+async function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoard = board, tempEnPassant = enPassant, tempCastlingRights = castlingRights) {
     const piece = tempBoard[fromRow][fromCol];
     const targetPiece = tempBoard[toRow][toCol];
     let moveNotation = '';
@@ -142,7 +159,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoa
     if (piece.toUpperCase() === 'K' && Math.abs(toCol - fromCol) === 2) {
         if (!isSimulation) moveSound.play();
         const side = toCol > fromCol ? 'short' : 'long';
-        performCastlingSimulation(color, side, tempBoard);
+        performCastling(color, side, tempBoard);
         moveNotation = side === 'short' ? 'O-O' : 'O-O-O';
         updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlingRights, tempBoard);
         if (!isSimulation) {
@@ -175,9 +192,12 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoa
         if ((piece === 'P' && toRow === 0) || (piece === 'p' && toRow === 7)) {
             if (!isSimulation) {
                 showPromotionModal(toRow, toCol, piece === 'P' ? 'white' : 'black');
-                promotionCallback = () => {
+                promotionCallback = async () => {
                     saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, moveNotation);
                     postMoveActions();
+                    if (gameMode === 'online') {
+                        await updateGameInFirestore();
+                    }
                 };
                 return;
             } else {
@@ -188,6 +208,7 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoa
         if (!isSimulation) {
             enPassant = tempEnPassant;
             castlingRights = tempCastlingRights;
+            board = tempBoard;
             updateBoard();
             saveMoveNotation(piece, fromRow, fromCol, toRow, toCol, targetPiece, moveNotation);
             postMoveActions();
@@ -196,14 +217,26 @@ function movePiece(fromRow, fromCol, toRow, toCol, isSimulation = false, tempBoa
 
     if (!isSimulation) {
         if (gameMode === 'online') {
-            sendMoveToServer({
-                boardState: JSON.stringify(board),
-                currentPlayer,
-                enPassant,
-                castlingRights,
-                moveHistory
-            });
+            await updateGameInFirestore();
         }
+    }
+}
+
+// Function to update Firestore after a move
+async function updateGameInFirestore() {
+    try {
+        const gameRef = doc(db, 'games', gameId);
+        await updateDoc(gameRef, {
+            boardState: board,
+            currentPlayer: currentPlayer,
+            enPassant: enPassant,
+            castlingRights: castlingRights,
+            moveHistory: moveHistory,
+            gameOver: isGameOver,
+            winner: isGameOver ? currentPlayer : null
+        });
+    } catch (error) {
+        console.error('Error al actualizar el estado del juego:', error);
     }
 }
 
@@ -214,7 +247,7 @@ function postMoveActions() {
         alert(`¡Jaque mate! Gana el jugador ${currentPlayer === 'white' ? 'Blanco' : 'Negro'}`);
         isGameOver = true;
         clearInterval(gameInterval);
-        if (pollingInterval) clearInterval(pollingInterval);
+        if (gameUnsubscribe) gameUnsubscribe();
         return;
     } else if (isInCheck(opponentColor())) {
         checkSound.play();
@@ -260,7 +293,7 @@ function updateCastlingRights(piece, fromRow, fromCol, toRow, toCol, tempCastlin
 }
 
 // Function to perform castling
-function performCastlingSimulation(color, side, tempBoard) {
+function performCastling(color, side, tempBoard) {
     const row = color === 'white' ? 7 : 0;
     if (side === 'short') {
         tempBoard[row][6] = tempBoard[row][4];
@@ -312,7 +345,7 @@ function computerMove() {
         if (isInCheck('black')) {
             alert('¡Jaque mate! Ganas la partida');
         } else {
-            alert('La computadora no puede mover pero no está en jaque. Esto no debería ocurrir.');
+            alert('Empate. La computadora no puede mover.');
         }
         isGameOver = true;
         clearInterval(gameInterval);
@@ -594,7 +627,6 @@ function leavesKingInCheck(fromRow, fromCol, toRow, toCol, playerColor, tempBoar
         simulatedBoard[fromRow][toCol] = '';
     }
 
-    const kingPosition = findKing(playerColor, simulatedBoard);
     return isInCheck(playerColor, simulatedBoard, simulatedEnPassant, simulatedCastlingRights);
 }
 
@@ -745,18 +777,152 @@ function updateMoveHistory() {
     historyList.scrollTop = historyList.scrollHeight;
 }
 
-// Update the difficulty level (only for computer)
-levelSelect.addEventListener('change', () => {
-    difficultyLevel = parseInt(levelSelect.value);
-});
+// Function to start listening to game state changes
+function startListeningToGame() {
+    const gameRef = doc(db, 'games', gameId);
 
-// New game button
-newGameBtn.addEventListener('click', () => {
-    if (gameMode === 'online') {
-        // Reset online game
-        createOnlineGame();
+    gameUnsubscribe = onSnapshot(gameRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            board = data.boardState;
+            currentPlayer = data.currentPlayer;
+            enPassant = data.enPassant;
+            castlingRights = data.castlingRights;
+            moveHistory = data.moveHistory;
+            isGameOver = data.gameOver;
+            updateBoard();
+            updateMoveHistory();
+            currentPlayerElement.textContent = currentPlayer === 'white' ? '⚪ Blanco' : '⚫ Negro';
+
+            if (isGameOver) {
+                alert(`Fin del juego. ${data.winner === 'draw' ? 'Empate' : 'Gana ' + (data.winner === 'white' ? 'Blanco' : 'Negro')}!`);
+                if (gameUnsubscribe) gameUnsubscribe();
+            }
+        }
+    }, error => {
+        console.error('Error al escuchar cambios en el juego:', error);
+    });
+}
+
+// Function to create or join an online game
+function generateGameId() {
+    return Math.random().toString(36).substr(2, 9);
+}
+
+function createOnlineGame() {
+    let colorChoice = prompt('Elige tu color: "blanco" o "negro":');
+    if (colorChoice !== null) {
+        colorChoice = colorChoice.toLowerCase();
+        if (colorChoice !== 'blanco' && colorChoice !== 'negro') {
+            alert('Color no válido. Por favor, escribe "blanco" o "negro".');
+            return;
+        }
+        playerColorOnline = colorChoice === 'blanco' ? 'white' : 'black';
+
+        // Generate a unique game ID
+        gameId = generateGameId();
+
+        // Create the game document in Firestore
+        setDoc(doc(db, 'games', gameId), {
+            boardState: JSON.parse(JSON.stringify(initialBoard)),
+            currentPlayer: 'white',
+            enPassant: null,
+            castlingRights: {
+                white: { short: true, long: true },
+                black: { short: true, long: true }
+            },
+            moveHistory: [],
+            players: {
+                [playerColorOnline]: true
+            },
+            gameOver: false,
+            winner: null,
+        })
+        .then(() => {
+            alert(`Juego creado. ID de la partida: ${gameId}. Comparte este ID con tu oponente.`);
+            createBoard();
+            startListeningToGame();
+        })
+        .catch(error => {
+            console.error('Error al crear el juego:', error);
+            alert('Error al crear el juego.');
+        });
     } else {
-        createBoard();
+        alert('Acción cancelada.');
+    }
+}
+
+function joinOnlineGame() {
+    const inputGameId = prompt('Introduce el ID de la partida:');
+    if (inputGameId !== null) {
+        let colorChoice = prompt('Elige tu color: "blanco" o "negro":');
+        if (colorChoice !== null) {
+            colorChoice = colorChoice.toLowerCase();
+            if (colorChoice !== 'blanco' && colorChoice !== 'negro') {
+                alert('Color no válido. Por favor, escribe "blanco" o "negro".');
+                return;
+            }
+            playerColorOnline = colorChoice === 'blanco' ? 'white' : 'black';
+            gameId = inputGameId;
+
+            const gameRef = doc(db, 'games', gameId);
+
+            getDoc(gameRef).then(docSnap => {
+                if (docSnap.exists()) {
+                    const gameData = docSnap.data();
+                    if (gameData.players[playerColorOnline]) {
+                        alert('Color ya tomado. Elige un color diferente.');
+                        return;
+                    }
+                    // Update the game document to include the new player
+                    updateDoc(gameRef, {
+                        [`players.${playerColorOnline}`]: true
+                    })
+                    .then(() => {
+                        alert('Te has unido a la partida.');
+                        createBoard();
+                        startListeningToGame();
+                    })
+                    .catch(error => {
+                        console.error('Error al unirse al juego:', error);
+                        alert('Error al unirse al juego.');
+                    });
+                } else {
+                    alert('Juego no encontrado. Verifica el ID.');
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener el juego:', error);
+                alert('Error al obtener el juego.');
+            });
+        } else {
+            alert('Acción cancelada.');
+        }
+    } else {
+        alert('Acción cancelada.');
+    }
+}
+
+// Online mode button
+onlineBtn.addEventListener('click', () => {
+    gameMode = 'online';
+    onlineBtn.style.backgroundColor = '#17a2b8';
+    computerBtn.style.backgroundColor = '#28a745';
+    twoPlayerBtn.style.backgroundColor = '#28a745';
+    if (gameUnsubscribe) gameUnsubscribe();
+
+    let action = prompt('Escribe "crear" para iniciar una nueva partida o "unir" para unirte a una partida existente:');
+    if (action !== null) {
+        action = action.toLowerCase();
+        if (action === 'crear') {
+            createOnlineGame();
+        } else if (action === 'unir') {
+            joinOnlineGame();
+        } else {
+            alert('Acción no reconocida. Por favor, escribe "crear" o "unir".');
+        }
+    } else {
+        alert('Acción cancelada.');
     }
 });
 
@@ -766,7 +932,7 @@ twoPlayerBtn.addEventListener('click', () => {
     twoPlayerBtn.style.backgroundColor = '#17a2b8';
     computerBtn.style.backgroundColor = '#28a745';
     onlineBtn.style.backgroundColor = '#28a745';
-    if (pollingInterval) clearInterval(pollingInterval);
+    if (gameUnsubscribe) gameUnsubscribe();
     createBoard();
 });
 
@@ -775,145 +941,37 @@ computerBtn.addEventListener('click', () => {
     computerBtn.style.backgroundColor = '#17a2b8';
     twoPlayerBtn.style.backgroundColor = '#28a745';
     onlineBtn.style.backgroundColor = '#28a745';
-    if (pollingInterval) clearInterval(pollingInterval);
+    if (gameUnsubscribe) gameUnsubscribe();
     createBoard();
 });
 
-// Online mode button
-onlineBtn.addEventListener('click', () => {
-    gameMode = 'online';
-    onlineBtn.style.backgroundColor = '#17a2b8';
-    computerBtn.style.backgroundColor = '#28a745';
-    twoPlayerBtn.style.backgroundColor = '#28a745';
-    if (pollingInterval) clearInterval(pollingInterval);
-    createOnlineGame();
+// Update the difficulty level (only for computer)
+levelSelect.addEventListener('change', () => {
+    difficultyLevel = parseInt(levelSelect.value);
 });
 
-// Function to send move to server
-function sendMoveToServer(moveData) {
-    fetch(`${backendUrl}?action=makeMove&gameId=${gameId}`, {
-        method: 'POST',
-        body: JSON.stringify(moveData),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.success) {
-            alert('Error al enviar el movimiento al servidor.');
-        }
-    })
-    .catch(error => {
-        console.error('Error al enviar el movimiento al servidor:', error);
-    });
-}
+// New game button
+newGameBtn.addEventListener('click', () => {
+    if (gameMode === 'online') {
+        if (gameUnsubscribe) gameUnsubscribe();
 
-// Function to fetch game state from server
-function fetchGameState() {
-    fetch(`${backendUrl}?action=getGameState&gameId=${gameId}`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the game state
-            board = JSON.parse(data.boardState); // Parse the boardState string
-            currentPlayer = data.currentPlayer;
-            enPassant = data.enPassant;
-            castlingRights = data.castlingRights;
-            moveHistory = data.moveHistory;
-            updateBoard();
-            updateMoveHistory();
-            currentPlayerElement.textContent = currentPlayer === 'white' ? '⚪ Blanco' : '⚫ Negro';
-            if (currentPlayer === playerColorOnline) {
-                // It's the player's turn
-                if (isCheckMate(playerColorOnline)) {
-                    checkSound.play();
-                    alert('¡Jaque mate! Has perdido.');
-                    isGameOver = true;
-                    clearInterval(gameInterval);
-                    clearInterval(pollingInterval);
-                } else if (isInCheck(playerColorOnline)) {
-                    checkSound.play();
-                    highlightKing(playerColorOnline);
-                }
+        let action = prompt('Escribe "crear" para iniciar una nueva partida o "unir" para unirte a una partida existente:');
+        if (action !== null) {
+            action = action.toLowerCase();
+            if (action === 'crear') {
+                createOnlineGame();
+            } else if (action === 'unir') {
+                joinOnlineGame();
+            } else {
+                alert('Acción no reconocida. Por favor, escribe "crear" o "unir".');
             }
         } else {
-            alert('Error al obtener el estado del juego.');
+            alert('Acción cancelada.');
         }
-    })
-    .catch(error => {
-        console.error('Error al obtener el estado del juego:', error);
-    });
-}
-
-// Function to start polling for opponent moves
-function startPolling() {
-    if (pollingInterval) clearInterval(pollingInterval);
-    pollingInterval = setInterval(() => {
-        if (isGameOver) {
-            clearInterval(pollingInterval);
-            return;
-        }
-        fetchGameState();
-    }, 3000); // Poll every 3 seconds
-}
-
-// Function to create or join an online game
-function createOnlineGame() {
-    const action = prompt('Escribe "crear" para iniciar una nueva partida o "unir" para unirte a una partida existente:').toLowerCase();
-    if (action === 'crear') {
-        // Choose color
-        const colorChoice = prompt('Elige tu color: "blanco" o "negro":').toLowerCase();
-        if (colorChoice !== 'blanco' && colorChoice !== 'negro') {
-            alert('Color no válido. Por favor, escribe "blanco" o "negro".');
-            return;
-        }
-        playerColorOnline = colorChoice === 'blanco' ? 'white' : 'black';
-        // Create a new game
-        fetch(`${backendUrl}?action=createGame&playerColor=${playerColorOnline}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                gameId = data.gameId;
-                alert(`Juego creado. ID de la partida: ${gameId}. Comparte este ID con tu oponente.`);
-                createBoard();
-                startPolling();
-            } else {
-                alert('Error al crear el juego.');
-            }
-        })
-        .catch(error => {
-            console.error('Error al crear el juego:', error);
-        });
-    } else if (action === 'unir') {
-        // Join an existing game
-        const inputGameId = prompt('Introduce el ID de la partida:');
-        // Choose color
-        const colorChoice = prompt('Elige tu color: "blanco" o "negro":').toLowerCase();
-        if (colorChoice !== 'blanco' && colorChoice !== 'negro') {
-            alert('Color no válido. Por favor, escribe "blanco" o "negro".');
-            return;
-        }
-        playerColorOnline = colorChoice === 'blanco' ? 'white' : 'black';
-        fetch(`${backendUrl}?action=joinGame&gameId=${inputGameId}&playerColor=${playerColorOnline}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                gameId = inputGameId;
-                alert('Te has unido a la partida.');
-                createBoard();
-                startPolling();
-            } else {
-                alert('No se pudo unir a la partida. Verifica el ID y el color elegido.');
-            }
-        })
-        .catch(error => {
-            console.error('Error al unirse al juego:', error);
-        });
     } else {
-        alert('Acción no reconocida. Por favor, escribe "crear" o "unir".');
+        createBoard();
     }
-}
+});
 
 // Close promotion modal when clicking outside
 window.addEventListener('click', (e) => {

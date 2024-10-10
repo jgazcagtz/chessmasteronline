@@ -1,9 +1,9 @@
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>🧙‍♂️ ChessMaster - Juego de Ajedrez</title>
+    <title>🧙‍♂️ ChessMaster - Chess Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Estilos CSS -->
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="styles.css">
     <!-- Google Ads (Optional) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3909517762571272"
@@ -16,10 +16,10 @@
 <body>
     <h1>🧙‍♂️ ChessMaster</h1>
     <div id="game-info">
-        <div id="current-player">🔄 Turno: <span id="player-color">⚪ Blanco</span></div>
-        <div id="timer">⏳ Tiempo: <span id="time">00:00</span></div>
+        <div id="current-player">🔄 Turn: <span id="player-color">⚪ White</span></div>
+        <div id="timer">⏳ Time: <span id="time">00:00</span></div>
         <div id="difficulty">
-            🧞‍♂️ Nivel: 
+            🧞‍♂️ Level: 
             <select id="level-select">
                 <option value="1">🗡️ 1</option>
                 <option value="2" selected>🛡️ 2</option>
@@ -27,17 +27,15 @@
             </select>
         </div>
         <div id="mode-selection">
-          <button id="computer-btn">👤 Un Jugador</button>
-            <button id="two-player-btn">👥 Dos Jugadores</button>
-          <button id="online-btn">🌐 En Línea (próximamente)</button>
-
+            <button id="computer-btn">👤 One Player</button>
+            <button id="two-player-btn">👥 Two Players</button>
         </div>
-        <button id="new-game-btn">💀 Nueva Partida</button>
+        <button id="new-game-btn">💀 New Game</button>
     </div>
     <div id="game">
         <div id="board"></div>
         <div id="move-history">
-            <h2>📜 Historial</h2>
+            <h2>📜 History</h2>
             <ol id="history-list"></ol>
         </div>
     </div>
@@ -49,15 +47,15 @@
             </a>
         </p>
     </footer>
-    <!-- Modal de promoción -->
+    <!-- Promotion Modal -->
     <div id="promotion-modal" class="modal">
         <div class="modal-content">
-            <h2>♟️ Promoción de Peón</h2>
-            <p>🧐 Elige una pieza para la promoción:</p>
+            <h2>♟️ Pawn Promotion</h2>
+            <p>🧐 Choose a piece for promotion:</p>
             <div id="promotion-options"></div>
         </div>
     </div>
-    <!-- Sonidos -->
+    <!-- Sounds -->
     <audio id="move-sound" src="sounds/move.mp3"></audio>
     <audio id="capture-sound" src="sounds/capture.mp3"></audio>
     <audio id="check-sound" src="sounds/check.mp3"></audio>
@@ -65,24 +63,7 @@
     <script src="script.js"></script>
     <!-- Background Music -->
     <audio id="background-music" loop>
-        <!-- Puedes agregar una fuente de música de fondo aquí -->
+        <!-- You can add a background music source here -->
     </audio>
- <!-- Firebase App (the core Firebase SDK) -->
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-
- 
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  // Initialize Firestore
-  const db = getFirestore(app);
-
-  // Import your main script
-  import './script.js';
-</script>
-
 </body>
 </html>

@@ -6,7 +6,7 @@
 
 const boardElement = document.getElementById('board');
 const historyList = document.getElementById('history-list');
-const playerColorSpan = document.getElementById('player-color');
+let playerColorSpan = document.getElementById('player-color');
 const currentPlayerDiv = document.getElementById('current-player');
 const timeSpan = document.getElementById('time');
 const levelSelect = document.getElementById('level-select');
@@ -62,7 +62,8 @@ function initGame() {
     currentPlayer = 'white';
     moveHistory = [];
     historyList.innerHTML = '';
-    playerColorSpan.textContent = '⚪ White';
+    currentPlayerDiv.innerHTML = '🔄 Turn: <span id="player-color">⚪ White</span>';
+    playerColorSpan = document.getElementById('player-color');
     currentPlayerDiv.classList.remove('check');
     elapsedTime = 0;
     fullMoveNumber = 1;
@@ -110,7 +111,9 @@ function renderBoard() {
                 pieceElement.dataset.piece = piece;
                 pieceElement.dataset.row = row;
                 pieceElement.dataset.col = col;
+                // Support both click and touch for mobile
                 pieceElement.addEventListener('click', onPieceClick);
+                pieceElement.addEventListener('touchend', onPieceClick);
                 square.appendChild(pieceElement);
             }
 
@@ -226,8 +229,12 @@ function isInBounds(row, col) {
 // User Interaction Handlers
 // ============================
 
-// Handle piece click
+// Handle piece click/touch
 function onPieceClick(e) {
+    // Prevent default to avoid double-tap zoom on mobile
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (gameOver) return;
     
     const pieceElement = e.currentTarget;
@@ -665,8 +672,12 @@ function getPieceDirectionsForCheck(pieceType, isWhite, tempBoard, row, col) {
 // Move Execution
 // ============================
 
-// Handle square click for moving pieces
-boardElement.addEventListener('click', function(e) {
+// Handle square click/touch for moving pieces
+function handleSquareClick(e) {
+    // Prevent default to avoid double-tap zoom on mobile
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (gameOver || !selectedPiece) return;
 
     const square = e.target.closest('.square');
@@ -681,7 +692,11 @@ boardElement.addEventListener('click', function(e) {
     if (move) {
         makeMove(move);
     }
-});
+}
+
+// Support both click and touch events for better mobile compatibility
+boardElement.addEventListener('click', handleSquareClick);
+boardElement.addEventListener('touchend', handleSquareClick);
 
 // Make a move on the board
 function makeMove(move) {
@@ -787,13 +802,12 @@ function makeMove(move) {
     if (gameMode === 'one-player' && currentPlayer === 'black' && !gameOver) {
         boardElement.style.pointerEvents = 'none';
         boardElement.style.opacity = '0.7';
-        const originalHTML = currentPlayerDiv.innerHTML;
         currentPlayerDiv.innerHTML = '🤖 Computer thinking...';
         setTimeout(() => {
             computerMove();
+            // After computer move, makeMove() will call switchPlayer() which updates the display
             boardElement.style.pointerEvents = 'auto';
             boardElement.style.opacity = '1';
-            // switchPlayer() will have been called, so the display is already updated
         }, 500);
     }
 }
@@ -913,7 +927,10 @@ promotionModal.addEventListener('click', function(e) {
 // Switch the current player
 function switchPlayer() {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-    playerColorSpan.textContent = currentPlayer === 'white' ? '⚪ White' : '⚫ Black';
+    // Ensure the display is properly updated
+    const playerText = currentPlayer === 'white' ? '⚪ White' : '⚫ Black';
+    currentPlayerDiv.innerHTML = '🔄 Turn: <span id="player-color">' + playerText + '</span>';
+    playerColorSpan = document.getElementById('player-color');
     currentPlayerDiv.classList.remove('check');
 }
 
@@ -979,7 +996,6 @@ computerBtn.addEventListener('click', () => {
     gameMode = 'one-player';
     computerBtn.classList.add('active');
     twoPlayerBtn.classList.remove('active');
-    playerColorSpan.textContent = '⚪ White';
     initGame();
 });
 
@@ -987,7 +1003,6 @@ twoPlayerBtn.addEventListener('click', () => {
     gameMode = 'two-player';
     twoPlayerBtn.classList.add('active');
     computerBtn.classList.remove('active');
-    playerColorSpan.textContent = '⚪ White';
     initGame();
 });
 

@@ -264,8 +264,14 @@ function selectPiece(row, col, piece) {
     const moves = getValidMoves(row, col, piece);
     moves.forEach(move => {
         const target = board[move.toRow][move.toCol];
-        const highlightClass = target !== '' ? 'highlight capture' : 'highlight';
-        highlightSquare(move.toRow, move.toCol, highlightClass);
+        if (target !== '') {
+            // For capture moves, add both classes
+            highlightSquare(move.toRow, move.toCol, 'highlight');
+            highlightSquare(move.toRow, move.toCol, 'capture');
+        } else {
+            // For regular moves, just add highlight
+            highlightSquare(move.toRow, move.toCol, 'highlight');
+        }
     });
 }
 

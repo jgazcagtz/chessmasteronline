@@ -21,9 +21,13 @@
         <div id="difficulty">
             🧞‍♂️ Level: 
             <select id="level-select">
-                <option value="1">🗡️ 1</option>
-                <option value="2" selected>🛡️ 2</option>
-                <option value="3">⚔️ 3</option>
+                <option value="1">🗡️ Beginner (1)</option>
+                <option value="2" selected>🛡️ Easy (2)</option>
+                <option value="3">⚔️ Medium (3)</option>
+                <option value="4">🏰 Hard (4)</option>
+                <option value="5">👑 Expert (5)</option>
+                <option value="6">🎯 Master (6)</option>
+                <option value="7">🌟 Grandmaster (7)</option>
             </select>
         </div>
         <div id="mode-selection">
@@ -53,6 +57,14 @@
             <h2>♟️ Pawn Promotion</h2>
             <p>🧐 Choose a piece for promotion:</p>
             <div id="promotion-options"></div>
+        </div>
+    </div>
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="game-over-title">🎉 Game Over</h2>
+            <p id="game-over-message"></p>
+            <button id="play-again-btn" class="btn-primary">🔄 Play Again</button>
         </div>
     </div>
     <!-- Sounds -->

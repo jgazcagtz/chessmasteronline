@@ -15,6 +15,10 @@ const twoPlayerBtn = document.getElementById('two-player-btn');
 const newGameBtn = document.getElementById('new-game-btn');
 const promotionModal = document.getElementById('promotion-modal');
 const promotionOptions = document.getElementById('promotion-options');
+const gameOverModal = document.getElementById('game-over-modal');
+const gameOverTitle = document.getElementById('game-over-title');
+const gameOverMessage = document.getElementById('game-over-message');
+const playAgainBtn = document.getElementById('play-again-btn');
 const moveSound = document.getElementById('move-sound');
 const captureSound = document.getElementById('capture-sound');
 const checkSound = document.getElementById('check-sound');
@@ -27,7 +31,7 @@ let moveHistory = [];
 let timerInterval = null;
 let elapsedTime = 0;
 let gameMode = 'two-player'; // 'two-player' or 'one-player'
-let difficulty = 2; // 1: Easy, 2: Medium, 3: Hard
+let difficulty = 2; // 1: Easy, 2: Medium, 3: Hard, etc.
 let castlingRights = {
     white: { kingside: true, queenside: true },
     black: { kingside: true, queenside: true }
@@ -35,6 +39,8 @@ let castlingRights = {
 let enPassantTarget = null; // { row, col }
 let halfMoveClock = 0; // For fifty-move rule (optional)
 let fullMoveNumber = 1;
+let lastMove = null; // Track last move for highlighting
+let gameOver = false;
 
 // ============================
 // Game Initialization
@@ -56,10 +62,13 @@ function initGame() {
     currentPlayer = 'white';
     moveHistory = [];
     historyList.innerHTML = '';
-    playerColorSpan.textContent = '⚪ Blanco';
+    playerColorSpan.textContent = '⚪ White';
     currentPlayerDiv.classList.remove('check');
     elapsedTime = 0;
     fullMoveNumber = 1;
+    lastMove = null;
+    gameOver = false;
+    gameOverModal.style.display = 'none';
     updateTimer();
     clearInterval(timerInterval);
     timerInterval = setInterval(updateTimer, 1000);
@@ -103,6 +112,13 @@ function renderBoard() {
                 pieceElement.dataset.col = col;
                 pieceElement.addEventListener('click', onPieceClick);
                 square.appendChild(pieceElement);
+            }
+
+            // Highlight last move
+            if (lastMove && 
+                ((lastMove.fromRow === row && lastMove.fromCol === col) ||
+                 (lastMove.toRow === row && lastMove.toCol === col))) {
+                square.classList.add('last-move');
             }
 
             boardElement.appendChild(square);
@@ -212,6 +228,8 @@ function isInBounds(row, col) {
 
 // Handle piece click
 function onPieceClick(e) {
+    if (gameOver) return;
+    
     const pieceElement = e.currentTarget;
     const row = parseInt(pieceElement.dataset.row);
     const col = parseInt(pieceElement.dataset.col);
@@ -238,7 +256,9 @@ function selectPiece(row, col, piece) {
 
     const moves = getValidMoves(row, col, piece);
     moves.forEach(move => {
-        highlightSquare(move.toRow, move.toCol, 'highlight');
+        const target = board[move.toRow][move.toCol];
+        const highlightClass = target !== '' ? 'highlight capture' : 'highlight';
+        highlightSquare(move.toRow, move.toCol, highlightClass);
     });
 }
 
@@ -261,7 +281,7 @@ function highlightSquare(row, col, className) {
 function removeHighlights() {
     const squares = boardElement.querySelectorAll('.square');
     squares.forEach(square => {
-        square.classList.remove('selected', 'highlight');
+        square.classList.remove('selected', 'highlight', 'capture');
     });
 }
 
@@ -647,7 +667,7 @@ function getPieceDirectionsForCheck(pieceType, isWhite, tempBoard, row, col) {
 
 // Handle square click for moving pieces
 boardElement.addEventListener('click', function(e) {
-    if (!selectedPiece) return;
+    if (gameOver || !selectedPiece) return;
 
     const square = e.target.closest('.square');
     if (!square) return;
@@ -721,18 +741,33 @@ function makeMove(move) {
     // Update castling rights if king or rook has moved or rook is captured
     updateCastlingRights(move, piece, capturedPiece);
 
+    // Update last move
+    lastMove = move;
+
     // Update move history
     const moveNotation = generateMoveNotation(move, capturedPiece);
     moveHistory.push(moveNotation);
     const li = document.createElement('li');
     li.textContent = moveNotation;
     historyList.appendChild(li);
+    historyList.scrollTop = historyList.scrollHeight;
 
     // Switch player
     switchPlayer();
 
     // Render the board
     renderBoard();
+
+    // Check for game over conditions
+    if (isCheckmate(currentPlayer)) {
+        endGame('checkmate', currentPlayer === 'white' ? 'black' : 'white');
+        return;
+    }
+    
+    if (isStalemate(currentPlayer)) {
+        endGame('stalemate', null);
+        return;
+    }
 
     // Check for check
     if (isInCheck(currentPlayer)) {
@@ -749,8 +784,17 @@ function makeMove(move) {
     }
 
     // If it's computer's turn, make AI move
-    if (gameMode === 'one-player' && currentPlayer === 'black') {
-        setTimeout(computerMove, 500);
+    if (gameMode === 'one-player' && currentPlayer === 'black' && !gameOver) {
+        boardElement.style.pointerEvents = 'none';
+        boardElement.style.opacity = '0.7';
+        const originalHTML = currentPlayerDiv.innerHTML;
+        currentPlayerDiv.innerHTML = '🤖 Computer thinking...';
+        setTimeout(() => {
+            computerMove();
+            boardElement.style.pointerEvents = 'auto';
+            boardElement.style.opacity = '1';
+            // switchPlayer() will have been called, so the display is already updated
+        }, 500);
     }
 }
 
@@ -869,7 +913,7 @@ promotionModal.addEventListener('click', function(e) {
 // Switch the current player
 function switchPlayer() {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-    playerColorSpan.textContent = currentPlayer === 'white' ? '⚪ Blanco' : '⚫ Negro';
+    playerColorSpan.textContent = currentPlayer === 'white' ? '⚪ White' : '⚫ Black';
     currentPlayerDiv.classList.remove('check');
 }
 
@@ -933,13 +977,26 @@ newGameBtn.addEventListener('click', () => {
 // Handle mode selection buttons
 computerBtn.addEventListener('click', () => {
     gameMode = 'one-player';
-    playerColorSpan.textContent = '⚪ Blanco';
+    computerBtn.classList.add('active');
+    twoPlayerBtn.classList.remove('active');
+    playerColorSpan.textContent = '⚪ White';
     initGame();
 });
 
 twoPlayerBtn.addEventListener('click', () => {
     gameMode = 'two-player';
-    playerColorSpan.textContent = '⚪ Blanco';
+    twoPlayerBtn.classList.add('active');
+    computerBtn.classList.remove('active');
+    playerColorSpan.textContent = '⚪ White';
+    initGame();
+});
+
+// Set initial active button
+twoPlayerBtn.classList.add('active');
+
+// Handle play again button
+playAgainBtn.addEventListener('click', () => {
+    gameOverModal.style.display = 'none';
     initGame();
 });
 
@@ -949,20 +1006,32 @@ twoPlayerBtn.addEventListener('click', () => {
 
 // Computer AI move
 function computerMove() {
+    if (gameOver) return;
+    
     const level = parseInt(levelSelect.value);
     let move;
+    
     if (level === 1) {
         move = randomMove('black');
     } else if (level === 2) {
         move = basicAI('black');
-    } else {
+    } else if (level === 3) {
         move = advancedAI('black');
+    } else {
+        // Levels 4-7 use minimax with increasing depth
+        const depth = Math.min(level, 7);
+        move = minimaxAI('black', depth);
     }
 
     if (move) {
         makeMove(move);
     } else {
-        alert('No valid moves available. Game over.');
+        // No valid moves - check for checkmate or stalemate
+        if (isCheckmate('black')) {
+            endGame('checkmate', 'white');
+        } else if (isStalemate('black')) {
+            endGame('stalemate', null);
+        }
     }
 }
 
@@ -1056,23 +1125,282 @@ function advancedAI(player) {
     return null;
 }
 
+// Minimax AI with alpha-beta pruning (Levels 4-7)
+function minimaxAI(player, depth) {
+    const moves = getAllValidMoves(player);
+    if (moves.length === 0) return null;
+
+    let bestMove = null;
+    let bestValue = player === 'black' ? -Infinity : Infinity;
+
+    // Try each move and evaluate
+    for (const move of moves) {
+        // Make the move
+        const tempBoard = board.map(row => row.slice());
+        const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+        const tempEnPassant = enPassantTarget;
+        const tempCurrentPlayer = currentPlayer;
+        
+        currentPlayer = player;
+        applyMove(move);
+        const value = minimax(depth - 1, !(player === 'black'), -Infinity, Infinity);
+        
+        // Restore board
+        board = tempBoard;
+        castlingRights = tempCastlingRights;
+        enPassantTarget = tempEnPassant;
+        currentPlayer = tempCurrentPlayer;
+
+        if (player === 'black') {
+            if (value > bestValue) {
+                bestValue = value;
+                bestMove = move;
+            }
+        } else {
+            if (value < bestValue) {
+                bestValue = value;
+                bestMove = move;
+            }
+        }
+    }
+
+    return bestMove || moves[0];
+}
+
+// Minimax algorithm with alpha-beta pruning
+function minimax(depth, maximizingPlayer, alpha, beta) {
+    if (depth === 0) {
+        return evaluateBoard();
+    }
+
+    const player = maximizingPlayer ? 'black' : 'white';
+    const moves = getAllValidMoves(player);
+
+    if (moves.length === 0) {
+        if (isInCheck(player)) {
+            return maximizingPlayer ? -10000 : 10000; // Checkmate
+        }
+        return 0; // Stalemate
+    }
+
+    if (maximizingPlayer) {
+        let maxEval = -Infinity;
+        for (const move of moves) {
+            const tempBoard = board.map(row => row.slice());
+            const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+            const tempEnPassant = enPassantTarget;
+            const tempCurrentPlayer = currentPlayer;
+            
+            currentPlayer = player;
+            applyMove(move);
+            const eval = minimax(depth - 1, false, alpha, beta);
+            
+            board = tempBoard;
+            castlingRights = tempCastlingRights;
+            enPassantTarget = tempEnPassant;
+            currentPlayer = tempCurrentPlayer;
+
+            maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) break; // Alpha-beta pruning
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const move of moves) {
+            const tempBoard = board.map(row => row.slice());
+            const tempCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+            const tempEnPassant = enPassantTarget;
+            const tempCurrentPlayer = currentPlayer;
+            
+            currentPlayer = player;
+            applyMove(move);
+            const eval = minimax(depth - 1, true, alpha, beta);
+            
+            board = tempBoard;
+            castlingRights = tempCastlingRights;
+            enPassantTarget = tempEnPassant;
+            currentPlayer = tempCurrentPlayer;
+
+            minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) break; // Alpha-beta pruning
+        }
+        return minEval;
+    }
+}
+
+// Get all valid moves for a player
+function getAllValidMoves(player) {
+    const allMoves = [];
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece === '' || (player === 'white' ? !isUpperCase(piece) : isUpperCase(piece))) continue;
+            const moves = getValidMoves(r, c, piece);
+            allMoves.push(...moves);
+        }
+    }
+    return allMoves;
+}
+
+// Apply a move to the board (for AI evaluation)
+function applyMove(move) {
+    const piece = board[move.fromRow][move.fromCol];
+    board[move.toRow][move.toCol] = piece;
+    board[move.fromRow][move.fromCol] = '';
+
+    if (move.special === 'en-passant') {
+        const direction = currentPlayer === 'white' ? 1 : -1;
+        board[move.toRow + direction][move.toCol] = '';
+    } else if (move.special === 'castling-kingside') {
+        const row = move.fromRow;
+        board[row][5] = board[row][7];
+        board[row][7] = '';
+    } else if (move.special === 'castling-queenside') {
+        const row = move.fromRow;
+        board[row][3] = board[row][0];
+        board[row][0] = '';
+    }
+
+    // Update castling rights (simplified for AI)
+    if (piece.toUpperCase() === 'K') {
+        const player = isUpperCase(piece) ? 'white' : 'black';
+        castlingRights[player].kingside = false;
+        castlingRights[player].queenside = false;
+    }
+}
+
+// Evaluate board position
+function evaluateBoard() {
+    let score = 0;
+    
+    // Piece values
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece === '') continue;
+            
+            const value = getPieceValue(piece);
+            const isWhite = isUpperCase(piece);
+            const pieceScore = isWhite ? value : -value;
+            
+            // Position bonuses
+            const positionBonus = getPositionBonus(piece, r, c);
+            score += pieceScore + (isWhite ? positionBonus : -positionBonus);
+        }
+    }
+    
+    return score;
+}
+
+// Position bonuses for better piece placement
+function getPositionBonus(piece, row, col) {
+    const pieceType = piece.toUpperCase();
+    const isWhite = isUpperCase(piece);
+    const r = isWhite ? row : 7 - row;
+    
+    // Center control bonus
+    const centerDistance = Math.abs(3.5 - row) + Math.abs(3.5 - col);
+    let bonus = (8 - centerDistance) * 0.1;
+    
+    // Piece-specific bonuses
+    if (pieceType === 'P') {
+        // Pawns advance
+        bonus += r * 0.1;
+    } else if (pieceType === 'N' || pieceType === 'B') {
+        // Knights and bishops prefer center
+        if (row >= 2 && row <= 5 && col >= 2 && col <= 5) {
+            bonus += 0.2;
+        }
+    } else if (pieceType === 'R') {
+        // Rooks on open files
+        let openFile = true;
+        for (let i = 0; i < 8; i++) {
+            if (board[i][col].toUpperCase() === 'P') {
+                openFile = false;
+                break;
+            }
+        }
+        if (openFile) bonus += 0.3;
+    }
+    
+    return bonus;
+}
+
 // Get value of a piece for AI decision-making
 function getPieceValue(piece) {
     const values = {
-        'P': 1,
-        'N': 3,
-        'B': 3,
-        'R': 5,
-        'Q': 9,
-        'K': 1000,
-        'p': 1,
-        'n': 3,
-        'b': 3,
-        'r': 5,
-        'q': 9,
-        'k': 1000
+        'P': 100,
+        'N': 320,
+        'B': 330,
+        'R': 500,
+        'Q': 900,
+        'K': 20000,
+        'p': 100,
+        'n': 320,
+        'b': 330,
+        'r': 500,
+        'q': 900,
+        'k': 20000
     };
     return values[piece] || 0;
+}
+
+// ============================
+// Game Over Detection
+// ============================
+
+// Check if player is in checkmate
+function isCheckmate(player) {
+    if (!isInCheck(player)) return false;
+    
+    // Check if any move can get out of check
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece === '' || (player === 'white' ? !isUpperCase(piece) : isUpperCase(piece))) continue;
+            const moves = getValidMoves(r, c, piece);
+            if (moves.length > 0) return false; // Has valid moves
+        }
+    }
+    
+    return true; // In check and no valid moves
+}
+
+// Check if player is in stalemate
+function isStalemate(player) {
+    if (isInCheck(player)) return false;
+    
+    // Check if player has any valid moves
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece === '' || (player === 'white' ? !isUpperCase(piece) : isUpperCase(piece))) continue;
+            const moves = getValidMoves(r, c, piece);
+            if (moves.length > 0) return false; // Has valid moves
+        }
+    }
+    
+    return true; // No check but no valid moves
+}
+
+// End game and show modal
+function endGame(result, winner) {
+    gameOver = true;
+    clearInterval(timerInterval);
+    
+    if (result === 'checkmate') {
+        gameOverTitle.textContent = '🎉 Checkmate!';
+        gameOverMessage.textContent = winner === 'white' 
+            ? '⚪ White wins by checkmate!' 
+            : '⚫ Black wins by checkmate!';
+    } else if (result === 'stalemate') {
+        gameOverTitle.textContent = '🤝 Stalemate!';
+        gameOverMessage.textContent = 'The game ended in a draw by stalemate.';
+    }
+    
+    gameOverModal.style.display = 'flex';
 }
 
 // ============================

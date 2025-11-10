@@ -243,6 +243,17 @@ function onPieceClick(e) {
     const piece = board[row][col];
     const pieceColor = isUpperCase(piece) ? 'white' : 'black';
 
+    // If we have a selected piece and this is an enemy piece, try to capture
+    if (selectedPiece && pieceColor !== currentPlayer) {
+        const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col, selectedPiece.piece);
+        const captureMove = validMoves.find(m => m.toRow === row && m.toCol === col && m.capture);
+        if (captureMove) {
+            makeMove(captureMove);
+            return;
+        }
+    }
+
+    // Only allow selecting own pieces
     if (pieceColor !== currentPlayer) return;
 
     // If already selected, deselect
@@ -684,7 +695,16 @@ function handleSquareClick(e) {
     e.preventDefault();
     e.stopPropagation();
     
-    if (gameOver || !selectedPiece) return;
+    if (gameOver) return;
+
+    // If clicking on a piece, check if we should select it or capture it
+    const pieceElement = e.target.closest('.piece');
+    if (pieceElement && !selectedPiece) {
+        // No piece selected, let the piece click handler deal with it
+        return;
+    }
+
+    if (!selectedPiece) return;
 
     const square = e.target.closest('.square');
     if (!square) return;
@@ -697,6 +717,22 @@ function handleSquareClick(e) {
 
     if (move) {
         makeMove(move);
+    } else {
+        // If clicking on an enemy piece and we have a selected piece, try to capture
+        if (pieceElement && selectedPiece) {
+            const pieceRow = parseInt(pieceElement.dataset.row);
+            const pieceCol = parseInt(pieceElement.dataset.col);
+            const piece = board[pieceRow][pieceCol];
+            const pieceColor = isUpperCase(piece) ? 'white' : 'black';
+            
+            // If it's an enemy piece, try to capture it
+            if (pieceColor !== currentPlayer) {
+                const captureMove = validMoves.find(m => m.toRow === pieceRow && m.toCol === pieceCol && m.capture);
+                if (captureMove) {
+                    makeMove(captureMove);
+                }
+            }
+        }
     }
 }
 

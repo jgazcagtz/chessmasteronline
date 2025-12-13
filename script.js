@@ -13,7 +13,6 @@ const levelSelect = document.getElementById('level-select');
 const computerBtn = document.getElementById('computer-btn');
 const twoPlayerBtn = document.getElementById('two-player-btn');
 const newGameBtn = document.getElementById('new-game-btn');
-const view3dBtn = document.getElementById('view-3d-btn');
 const promotionModal = document.getElementById('promotion-modal');
 const promotionOptions = document.getElementById('promotion-options');
 const gameOverModal = document.getElementById('game-over-modal');
@@ -65,8 +64,7 @@ function initGame() {
     currentPlayer = 'white';
     moveHistory = [];
     historyList.innerHTML = '';
-    currentPlayerDiv.innerHTML = '🔄 Turn: <span id="player-color">⚪ White</span>';
-    playerColorSpan = document.getElementById('player-color');
+    playerColorSpan.textContent = "White's Turn";
     currentPlayerDiv.classList.remove('check');
     elapsedTime = 0;
     fullMoveNumber = 1;
@@ -617,7 +615,7 @@ function makeMove(move) {
     if (gameMode === 'one-player' && currentPlayer === 'black' && !gameOver) {
         boardElement.style.pointerEvents = 'none';
         boardElement.style.opacity = '0.7';
-        currentPlayerDiv.innerHTML = '🤖 Computer thinking...';
+        playerColorSpan.textContent = '🤔 Thinking...';
         
         setTimeout(() => {
             computerMove();
@@ -695,9 +693,7 @@ promotionModal.addEventListener('click', function(e) {
 
 function switchPlayer() {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-    const playerText = currentPlayer === 'white' ? '⚪ White' : '⚫ Black';
-    currentPlayerDiv.innerHTML = '🔄 Turn: <span id="player-color">' + playerText + '</span>';
-    playerColorSpan = document.getElementById('player-color');
+    playerColorSpan.textContent = currentPlayer === 'white' ? "White's Turn" : "Black's Turn";
     currentPlayerDiv.classList.remove('check');
 }
 
@@ -805,17 +801,17 @@ function endGame(result, winner) {
     boardElement.style.opacity = '1';
     
     if (result === 'checkmate') {
-        gameOverTitle.textContent = '🎉 Checkmate!';
-        gameOverMessage.textContent = winner === 'white' ? '⚪ White wins!' : '⚫ Black wins!';
+        gameOverTitle.textContent = '👑 Checkmate!';
+        gameOverMessage.textContent = winner === 'white' ? 'White wins the game!' : 'Black wins the game!';
     } else if (result === 'stalemate') {
-        gameOverTitle.textContent = '🤝 Stalemate!';
-        gameOverMessage.textContent = 'Draw by stalemate.';
+        gameOverTitle.textContent = '🤝 Stalemate';
+        gameOverMessage.textContent = 'The game is a draw.';
     } else if (result === 'fifty-move') {
-        gameOverTitle.textContent = '🤝 Draw!';
+        gameOverTitle.textContent = '🤝 Draw';
         gameOverMessage.textContent = 'Draw by 50-move rule.';
     } else if (result === 'insufficient') {
-        gameOverTitle.textContent = '🤝 Draw!';
-        gameOverMessage.textContent = 'Draw by insufficient material.';
+        gameOverTitle.textContent = '🤝 Draw';
+        gameOverMessage.textContent = 'Insufficient material to checkmate.';
     }
     
     gameOverModal.style.display = 'flex';
@@ -1075,22 +1071,6 @@ playAgainBtn.addEventListener('click', () => {
     gameOverModal.style.display = 'none';
     initGame();
 });
-
-if (view3dBtn) {
-    view3dBtn.addEventListener('click', () => {
-        boardElement.classList.toggle('view-3d');
-        const is3D = boardElement.classList.contains('view-3d');
-        view3dBtn.textContent = is3D ? '🧊 2D View' : '🧊 3D View';
-        
-        if (is3D) {
-            view3dBtn.style.background = 'linear-gradient(135deg, #2e004f 0%, #4b0082 100%)';
-            view3dBtn.style.borderColor = 'var(--gothic-gold)';
-        } else {
-            view3dBtn.style.background = '';
-            view3dBtn.style.borderColor = '';
-        }
-    });
-}
 
 // ============================
 // Start

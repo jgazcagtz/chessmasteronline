@@ -1,87 +1,76 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>🧙‍♂️ ChessMaster - Chess Game</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1a1a1a">
-    <!-- CSS Styles -->
+    <title>♟️ ChessMaster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f0f0f">
+    <meta name="description" content="Play chess against AI or a friend. Beautiful, modern chess game.">
     <link rel="stylesheet" href="styles.css">
     <!-- Google Ads (Optional) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3909517762571272"
-        crossorigin="anonymous"></script>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Eagle+Lake&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3909517762571272" crossorigin="anonymous"></script>
 </head>
 <body>
-    <h1>🧙‍♂️ ChessMaster</h1>
+    <h1>♟️ ChessMaster</h1>
+    
     <div id="game-info">
-        <div id="current-player">🔄 Turn: <span id="player-color">⚪ White</span></div>
-        <div id="timer">⏳ Time: <span id="time">00:00</span></div>
+        <div id="current-player">🔄 <span id="player-color">White's Turn</span></div>
+        <div id="timer">⏱️ <span id="time">00:00</span></div>
         <div id="difficulty">
-            🧞‍♂️ Level: 
+            🎯 
             <select id="level-select">
-                <option value="1">🗡️ Beginner (1)</option>
-                <option value="2" selected>🛡️ Easy (2)</option>
-                <option value="3">⚔️ Medium (3)</option>
-                <option value="4">🏰 Hard (4)</option>
-                <option value="5">👑 Expert (5)</option>
-                <option value="6">🎯 Master (6)</option>
-                <option value="7">🌟 Grandmaster (7)</option>
+                <option value="1">Beginner</option>
+                <option value="2" selected>Easy</option>
+                <option value="3">Medium</option>
+                <option value="4">Hard</option>
+                <option value="5">Expert</option>
             </select>
         </div>
         <div id="mode-selection">
-            <button id="computer-btn">👤 One Player</button>
-            <button id="two-player-btn">👥 Two Players</button>
+            <button id="computer-btn">👤 vs Computer</button>
+            <button id="two-player-btn">👥 2 Players</button>
         </div>
-        <button id="view-3d-btn" class="secondary-btn">🧊 3D View</button>
-        <button id="new-game-btn">💀 New Game</button>
+        <button id="new-game-btn">🔄 New Game</button>
     </div>
+
     <div id="game-container">
         <div id="game">
             <div id="board"></div>
             <div id="move-history">
-                <h2>📜 History</h2>
+                <h2>📜 Moves</h2>
                 <ol id="history-list"></ol>
             </div>
         </div>
     </div>
+
     <footer>
-        <p>
-            Beta v1.0 JG® | 
-            <a href="https://buymeacoffee.com/georgegeorge" target="_blank" rel="noopener noreferrer" class="buy-me-a-beer">
-                🍺 Buy me a beer
-            </a>
-        </p>
+        <p>ChessMaster v1.0 | <a href="https://buymeacoffee.com/georgegeorge" target="_blank">☕ Buy me a coffee</a></p>
     </footer>
+
     <!-- Promotion Modal -->
     <div id="promotion-modal" class="modal">
         <div class="modal-content">
-            <h2>♟️ Pawn Promotion</h2>
-            <p>🧐 Choose a piece for promotion:</p>
+            <h2>♟️ Promote Pawn</h2>
+            <p>Choose your new piece:</p>
             <div id="promotion-options"></div>
         </div>
     </div>
+
     <!-- Game Over Modal -->
     <div id="game-over-modal" class="modal">
         <div class="modal-content">
-            <h2 id="game-over-title">🎉 Game Over</h2>
+            <h2 id="game-over-title">Game Over</h2>
             <p id="game-over-message"></p>
-            <button id="play-again-btn" class="btn-primary">🔄 Play Again</button>
+            <button id="play-again-btn" class="btn-primary">Play Again</button>
         </div>
     </div>
+
     <!-- Sounds -->
-    <audio id="move-sound" src="sounds/move.mp3"></audio>
-    <audio id="capture-sound" src="sounds/capture.mp3"></audio>
-    <audio id="check-sound" src="sounds/check.mp3"></audio>
-    <!-- Scripts -->
+    <audio id="move-sound" src="sounds/move.mp3" preload="auto"></audio>
+    <audio id="capture-sound" src="sounds/capture.mp3" preload="auto"></audio>
+    <audio id="check-sound" src="sounds/check.mp3" preload="auto"></audio>
+    <audio id="background-music" loop></audio>
+
     <script src="script.js"></script>
-    <!-- Background Music -->
-    <audio id="background-music" loop>
-        <!-- You can add a background music source here -->
-    </audio>
 </body>
 </html>

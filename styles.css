@@ -252,7 +252,7 @@ h1 {
     position: relative;
     border-radius: 6px;
     background: var(--board-dark);
-    overflow: hidden;
+    /* overflow: hidden; -- Removed for 3D transforms */
 }
 
 .square {
@@ -311,6 +311,8 @@ h1 {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Ensure touches are caught */
+    touch-action: none;
 }
 
 /* White pieces - Bright white with strong shadow and outline */
@@ -340,8 +342,8 @@ h1 {
 .piece[data-piece="k"] {
     color: #000000 !important;
     filter: 
-        drop-shadow(0 0 4px rgba(255,255,255,0.9))
-        drop-shadow(0 0 8px rgba(255,255,255,0.7))
+        drop-shadow(0 0 4px rgba(255,255,255,0.9)) 
+        drop-shadow(0 0 8px rgba(255,255,255,0.7)) 
         drop-shadow(3px 3px 6px rgba(0,0,0,0.9));
     text-shadow: 
         0 0 6px rgba(255,255,255,1),
@@ -918,4 +920,84 @@ footer a.buy-me-a-beer:hover {
     border-top-color: var(--gothic-gold);
     animation: spin 1s linear infinite;
     margin-left: 10px;
+}
+
+/* Drag & Drop Styles */
+.piece.dragging {
+    cursor: grabbing;
+    z-index: 1000;
+    pointer-events: none; /* Let events pass through to squares below */
+    transition: none !important; /* No transition while dragging */
+    position: fixed; /* Fixed to viewport */
+    width: min(11.25vmin, 11.25vw, 81.25px); /* Match square size roughly */
+    height: min(11.25vmin, 11.25vw, 81.25px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: translate(-50%, -50%); /* Center on pointer */
+    left: 0;
+    top: 0;
+}
+
+/* 3D Mode Styles */
+#game-container {
+    perspective: 1200px;
+    margin: 0 auto;
+}
+
+#board.view-3d {
+    transform: rotateX(45deg) rotateZ(0deg);
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 
+        0 30px 40px rgba(0,0,0,0.6),
+        inset 0 0 30px rgba(0,0,0,0.6),
+        0 0 0 10px #5d4037;
+}
+
+.view-3d .piece {
+    transform: rotateX(-45deg) translateY(-10px) scale(1.1);
+    transform-origin: bottom center;
+    text-shadow: 0 10px 5px rgba(0,0,0,0.4);
+    transition: transform 0.3s;
+}
+
+.view-3d .piece:hover {
+    transform: rotateX(-45deg) translateY(-20px) scale(1.3);
+}
+
+.view-3d .square.last-move {
+    background-color: rgba(212, 175, 55, 0.4) !important;
+    box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.8);
+}
+
+/* Secondary Button */
+.secondary-btn {
+    font-family: "Eagle Lake", serif, "Uncial Antiqua", sans-serif;
+    margin: 5px 0;
+    padding: 10px 20px;
+    font-size: clamp(12px, 2.5vw, 14px);
+    cursor: pointer;
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    background: linear-gradient(135deg, #4b0082 0%, #2e004f 100%);
+    color: var(--text-light);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
+    grid-column: span 2;
+    justify-self: center;
+    width: 80%;
+}
+
+.secondary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(212, 175, 55, 0.6);
+    filter: brightness(1.2);
+}
+
+/* Fix dragging in 3D mode */
+.view-3d .piece.dragging {
+    transform: none !important; /* Reset 3D transform while dragging */
 }

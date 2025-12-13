@@ -37,7 +37,7 @@ let castlingRights = {
     black: { kingside: true, queenside: true }
 };
 let enPassantTarget = null; // { row, col }
-let halfMoveClock = 0; // For fifty-move rule (optional)
+let halfMoveClock = 0; // For fifty-move rule
 let fullMoveNumber = 1;
 let lastMove = null; // Track last move for highlighting
 let gameOver = false;
@@ -67,6 +67,7 @@ function initGame() {
     currentPlayerDiv.classList.remove('check');
     elapsedTime = 0;
     fullMoveNumber = 1;
+    halfMoveClock = 0;
     lastMove = null;
     gameOver = false;
     gameOverModal.style.display = 'none';
@@ -275,7 +276,7 @@ function selectPiece(row, col, piece) {
     const moves = getValidMoves(row, col, piece);
     moves.forEach(move => {
         const target = board[move.toRow][move.toCol];
-        if (target !== '') {
+        if (target !== '' || (move.special === 'en-passant')) {
             // For capture moves, add both classes
             highlightSquare(move.toRow, move.toCol, 'highlight');
             highlightSquare(move.toRow, move.toCol, 'capture');
@@ -517,6 +518,7 @@ function wouldCauseCheck(move) {
     // Handle special moves
     if (move.special === 'en-passant') {
         const direction = currentPlayer === 'white' ? 1 : -1;
+        // Direction used for capture is opposite of move direction
         capturedPiece = tempBoard[move.toRow + direction][move.toCol];
         tempBoard[move.toRow + direction][move.toCol] = '';
     } else if (move.special === 'castling-kingside') {
@@ -743,8 +745,29 @@ boardElement.addEventListener('touchend', handleSquareClick);
 // Make a move on the board
 function makeMove(move) {
     const piece = board[move.fromRow][move.fromCol];
-    const target = board[move.toRow][move.toCol];
+    const pieceType = piece.toUpperCase();
+    const isWhite = isUpperCase(piece);
+    let target = board[move.toRow][move.toCol];
     let capturedPiece = target;
+
+    // Check for promotion
+    const isPromotion = pieceType === 'P' && (
+        (isWhite && move.toRow === 0) || 
+        (!isWhite && move.toRow === 7)
+    );
+
+    // Handle Promotion Entry
+    if (isPromotion && !move.promotion) {
+        if (currentPlayer !== 'white' && gameMode === 'one-player') {
+             // AI Promotion - default to Queen
+             move.promotion = 'q';
+             move.special = 'promotion';
+        } else {
+             // Human Promotion - wait for user input
+             promptPromotion(move);
+             return;
+        }
+    }
 
     // Play sounds
     if (move.capture || move.special === 'en-passant') {
@@ -755,20 +778,34 @@ function makeMove(move) {
         moveSound.play();
     }
 
+    // Update 50-move rule counter
+    if (pieceType === 'P' || capturedPiece !== '') {
+        halfMoveClock = 0;
+    } else {
+        halfMoveClock++;
+    }
+
     // Move the piece
     board[move.toRow][move.toCol] = piece;
     board[move.fromRow][move.fromCol] = '';
 
+    // Handle Promotion Execution
+    if (move.promotion) {
+        const promotedPiece = isWhite ? move.promotion.toUpperCase() : move.promotion.toLowerCase();
+        board[move.toRow][move.toCol] = promotedPiece;
+    }
+
     // Handle special moves
     if (move.special === 'double-pawn') {
-        const direction = currentPlayer === 'white' ? -1 : 1;
-        enPassantTarget = { row: move.toRow + direction, col: move.toCol };
+        const direction = isWhite ? -1 : 1;
+        // Fix: Target is the skipped square (one square behind destination)
+        enPassantTarget = { row: move.toRow - direction, col: move.toCol };
     } else {
         enPassantTarget = null;
     }
 
     if (move.special === 'en-passant') {
-        const direction = currentPlayer === 'white' ? 1 : -1;
+        const direction = isWhite ? 1 : -1; // Opponent direction relative to capture
         capturedPiece = board[move.toRow + direction][move.toCol];
         board[move.toRow + direction][move.toCol] = '';
     }
@@ -785,14 +822,6 @@ function makeMove(move) {
         // Move the rook
         board[row][3] = board[row][0];
         board[row][0] = '';
-    }
-
-    // Handle pawn promotion
-    if (piece.toUpperCase() === 'P') {
-        if ((isUpperCase(piece) && move.toRow === 0) || (!isUpperCase(piece) && move.toRow === 7)) {
-            promptPromotion(move.toRow, move.toCol);
-            return; // Wait for promotion before continuing
-        }
     }
 
     // Update castling rights if king or rook has moved or rook is captured
@@ -815,25 +844,9 @@ function makeMove(move) {
     // Render the board
     renderBoard();
 
-    // Check for game over conditions
-    if (isCheckmate(currentPlayer)) {
-        endGame('checkmate', currentPlayer === 'white' ? 'black' : 'white');
-        return;
-    }
-    
-    if (isStalemate(currentPlayer)) {
-        endGame('stalemate', null);
-        return;
-    }
-
-    // Check for check
-    if (isInCheck(currentPlayer)) {
-        currentPlayerDiv.classList.add('check');
-        checkSound.currentTime = 0;
-        checkSound.play();
-    } else {
-        currentPlayerDiv.classList.remove('check');
-    }
+    // Check game status (mate, draw, etc.)
+    const gameStatus = checkGameStatus();
+    if (gameStatus) return; // Game over
 
     // Increment full move number after black's move
     if (currentPlayer === 'white') {
@@ -847,11 +860,74 @@ function makeMove(move) {
         currentPlayerDiv.innerHTML = '🤖 Computer thinking...';
         setTimeout(() => {
             computerMove();
-            // After computer move, makeMove() will call switchPlayer() which updates the display
+            // Restore UI is handled in renderBoard/switchPlayer, but ensuring pointer events are back
             boardElement.style.pointerEvents = 'auto';
             boardElement.style.opacity = '1';
         }, 500);
     }
+}
+
+// Check game status (checkmate, stalemate, draws)
+function checkGameStatus() {
+    if (isCheckmate(currentPlayer)) {
+        endGame('checkmate', currentPlayer === 'white' ? 'black' : 'white');
+        return true;
+    }
+    
+    if (isStalemate(currentPlayer)) {
+        endGame('stalemate', null);
+        return true;
+    }
+
+    if (halfMoveClock >= 100) { // 50 moves each = 100 half moves
+        endGame('fifty-move', null);
+        return true;
+    }
+
+    if (isInsufficientMaterial()) {
+        endGame('insufficient', null);
+        return true;
+    }
+
+    // Check for check
+    if (isInCheck(currentPlayer)) {
+        currentPlayerDiv.classList.add('check');
+        checkSound.currentTime = 0;
+        checkSound.play();
+    } else {
+        currentPlayerDiv.classList.remove('check');
+    }
+    return false;
+}
+
+// Check for insufficient material for checkmate
+function isInsufficientMaterial() {
+    let pieces = [];
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece !== '') pieces.push(piece.toUpperCase());
+        }
+    }
+
+    // K vs K
+    if (pieces.length === 2) return true;
+
+    // K+N vs K or K+B vs K
+    if (pieces.length === 3) {
+        return pieces.includes('N') || pieces.includes('B');
+    }
+
+    // K+N vs K+N etc (simplified check, covers most common draws)
+    if (pieces.length === 4) {
+        // e.g. K+B vs K+B (same color bishops? complex check omitted for simplicity)
+        // Strictly, K+B vs K+B is a draw, as is K+N vs K+N.
+        // We will assume draw if no pawns, rooks, or queens.
+        const majors = pieces.filter(p => p === 'P' || p === 'R' || p === 'Q');
+        if (majors.length === 0) return true;
+    }
+
+    return false;
 }
 
 // ============================
@@ -925,8 +1001,8 @@ function generateMoveNotation(move, capturedPiece) {
     notation += String.fromCharCode(97 + move.toCol) + (8 - move.toRow);
 
     // Add promotion notation
-    if (move.special === 'promotion') {
-        notation += '=' + move.promotion;
+    if (move.special === 'promotion' || move.promotion) {
+        notation += '=' + (move.promotion || 'Q').toUpperCase();
     }
 
     return notation;
@@ -937,7 +1013,7 @@ function generateMoveNotation(move, capturedPiece) {
 // ============================
 
 // Prompt for pawn promotion
-function promptPromotion(row, col) {
+function promptPromotion(move) {
     promotionModal.style.display = 'flex';
     promotionOptions.innerHTML = '';
 
@@ -945,20 +1021,32 @@ function promptPromotion(row, col) {
     pieces.forEach(p => {
         const btn = document.createElement('div');
         btn.classList.add('promotion-piece');
-        btn.textContent = isUpperCase(board[row][col]) ? getPieceUnicode(p) : getPieceUnicode(p.toLowerCase());
+        // Show piece in current player's color
+        const isWhite = currentPlayer === 'white';
+        btn.textContent = isWhite ? getPieceUnicode(p) : getPieceUnicode(p.toLowerCase());
+        
         btn.addEventListener('click', () => {
-            board[row][col] = isUpperCase(board[row][col]) ? p : p.toLowerCase();
+            move.promotion = p; // 'Q', 'R', etc.
+            move.special = 'promotion';
             promotionModal.style.display = 'none';
-            renderBoard();
+            // Resume move execution
+            makeMove(move);
         });
+        
         promotionOptions.appendChild(btn);
     });
 }
 
-// Close promotion modal when clicking outside
+// Close promotion modal when clicking outside (cancels move?)
+// Ideally should not be closeable without selection, or should cancel move.
 promotionModal.addEventListener('click', function(e) {
     if (e.target === promotionModal) {
         promotionModal.style.display = 'none';
+        // If cancelled, we should probably revert the state or just do nothing (piece stays selected)
+        // Since we didn't execute move, nothing to revert.
+        // Just deselect piece.
+        deselectPiece();
+        renderBoard();
     }
 });
 
@@ -1304,6 +1392,7 @@ function getAllValidMoves(player) {
 // Apply a move to the board (for AI evaluation)
 function applyMove(move) {
     const piece = board[move.fromRow][move.fromCol];
+    const capturedPiece = board[move.toRow][move.toCol];
     board[move.toRow][move.toCol] = piece;
     board[move.fromRow][move.fromCol] = '';
 
@@ -1320,12 +1409,22 @@ function applyMove(move) {
         board[row][0] = '';
     }
 
-    // Update castling rights (simplified for AI)
-    if (piece.toUpperCase() === 'K') {
-        const player = isUpperCase(piece) ? 'white' : 'black';
-        castlingRights[player].kingside = false;
-        castlingRights[player].queenside = false;
+    // Update En Passant Target for AI
+    if (move.special === 'double-pawn') {
+        const isWhite = isUpperCase(piece);
+        const direction = isWhite ? -1 : 1;
+        enPassantTarget = { row: move.toRow - direction, col: move.toCol };
+    } else {
+        enPassantTarget = null;
     }
+
+    // Auto promote to Queen for AI analysis
+    if (piece.toUpperCase() === 'P' && (move.toRow === 0 || move.toRow === 7)) {
+        board[move.toRow][move.toCol] = isUpperCase(piece) ? 'Q' : 'q';
+    }
+
+    // Update castling rights
+    updateCastlingRights(move, piece, capturedPiece);
 }
 
 // Evaluate board position
@@ -1455,6 +1554,12 @@ function endGame(result, winner) {
     } else if (result === 'stalemate') {
         gameOverTitle.textContent = '🤝 Stalemate!';
         gameOverMessage.textContent = 'The game ended in a draw by stalemate.';
+    } else if (result === 'fifty-move') {
+        gameOverTitle.textContent = '🤝 Draw!';
+        gameOverMessage.textContent = 'The game ended in a draw by the 50-move rule.';
+    } else if (result === 'insufficient') {
+        gameOverTitle.textContent = '🤝 Draw!';
+        gameOverMessage.textContent = 'The game ended in a draw due to insufficient material.';
     }
     
     gameOverModal.style.display = 'flex';

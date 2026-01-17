@@ -112,7 +112,7 @@ function renderBoard() {
             if (piece !== '') {
                 const pieceElement = document.createElement('div');
                 pieceElement.classList.add('piece');
-                pieceElement.textContent = getPieceUnicode(piece);
+                pieceElement.innerHTML = getPieceSVG(piece);
                 pieceElement.dataset.piece = piece;
                 pieceElement.dataset.row = row;
                 pieceElement.dataset.col = col;
@@ -138,12 +138,24 @@ function renderBoard() {
 // Helper Functions
 // ============================
 
-function getPieceUnicode(piece) {
-    const pieces = {
-        'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔',
-        'p': '♟︎', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚'
+function getPieceSVG(piece) {
+    // Map piece notation to SVG sprite IDs
+    const svgIds = {
+        'P': 'wP', 'R': 'wR', 'N': 'wN', 'B': 'wB', 'Q': 'wQ', 'K': 'wK',
+        'p': 'bP', 'r': 'bR', 'n': 'bN', 'b': 'bB', 'q': 'bQ', 'k': 'bK'
     };
-    return pieces[piece] || '';
+    const id = svgIds[piece];
+    if (!id) return '';
+    return `<svg viewBox="0 0 45 45"><use href="#${id}"/></svg>`;
+}
+
+function getPieceSymbol(piece) {
+    // Text symbols for algebraic notation in history
+    const symbols = {
+        'P': '', 'R': 'R', 'N': 'N', 'B': 'B', 'Q': 'Q', 'K': 'K',
+        'p': '', 'r': 'R', 'n': 'N', 'b': 'B', 'q': 'Q', 'k': 'K'
+    };
+    return symbols[piece] || '';
 }
 
 function isUpperCase(char) {
@@ -672,7 +684,7 @@ function promptPromotion(move) {
         const btn = document.createElement('div');
         btn.classList.add('promotion-piece');
         const isWhite = currentPlayer === 'white';
-        btn.textContent = isWhite ? getPieceUnicode(p) : getPieceUnicode(p.toLowerCase());
+        btn.innerHTML = isWhite ? getPieceSVG(p) : getPieceSVG(p.toLowerCase());
         btn.addEventListener('click', () => {
             move.promotion = p;
             move.special = 'promotion';

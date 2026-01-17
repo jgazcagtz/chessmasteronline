@@ -1,32 +1,48 @@
 /* ============================================
-   ChessMaster - Clean Modern Chess UI
+   ChessMaster - SVG Piece Chess UI
+   Clean, High-Contrast Design
    ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
 * {
     box-sizing: border-box;
 }
 
 :root {
-    --bg-dark: #0f0f0f;
-    --bg-card: #1a1a1a;
-    --bg-card-hover: #252525;
-    --accent: #e6a429;
-    --accent-glow: rgba(230, 164, 41, 0.4);
-    --text-primary: #ffffff;
+    /* Dark theme */
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #0f3460;
+    --bg-card-hover: #1a4a75;
+    
+    /* Accent colors */
+    --accent: #e94560;
+    --accent-soft: rgba(233, 69, 96, 0.2);
+    --accent-glow: rgba(233, 69, 96, 0.4);
+    
+    /* Text */
+    --text-primary: #eaeaea;
     --text-secondary: #a0a0a0;
-    --board-light: #ecd9b9;
-    --board-dark: #ae8a68;
-    --white-piece: #fff8e7;
-    --white-piece-stroke: #2a2a2a;
-    --black-piece: #1a1a1a;
-    --black-piece-stroke: #ffffff;
-    --selected: rgba(230, 164, 41, 0.5);
-    --valid-move: rgba(100, 200, 100, 0.7);
-    --capture: rgba(220, 53, 69, 0.6);
-    --last-move: rgba(230, 164, 41, 0.35);
-    --check: rgba(220, 53, 69, 0.5);
-    --radius: 8px;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    --text-muted: #6a6a6a;
+    
+    /* Board colors - warm wood tones */
+    --board-light: #f0d9b5;
+    --board-dark: #b58863;
+    --board-border: #8b5a2b;
+    
+    /* Game state indicators */
+    --selected: rgba(233, 69, 96, 0.45);
+    --valid-move: rgba(130, 230, 100, 0.55);
+    --capture: rgba(255, 80, 80, 0.6);
+    --last-move: rgba(255, 215, 0, 0.35);
+    --check: rgba(255, 50, 50, 0.55);
+    
+    /* Utils */
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
 }
 
 html, body {
@@ -36,53 +52,83 @@ html, body {
 }
 
 body {
-    background: var(--bg-dark);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 16px;
-    gap: 16px;
+    padding: 20px;
+    gap: 20px;
 }
 
-/* Header */
+/* ============================================
+   Icons
+   ============================================ */
+
+.icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+header {
+    text-align: center;
+}
+
 h1 {
     margin: 0;
-    font-size: clamp(24px, 5vw, 36px);
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 1px;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
 }
 
-/* Game Info Bar */
+/* ============================================
+   Game Info Bar
+   ============================================ */
+
 #game-info {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     justify-content: center;
     align-items: center;
     background: var(--bg-card);
-    padding: 14px 20px;
+    padding: 16px 24px;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    max-width: 700px;
+    max-width: 800px;
     width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 #current-player, #timer, #difficulty {
-    background: var(--bg-card-hover);
+    background: var(--bg-secondary);
     padding: 10px 16px;
-    border-radius: var(--radius);
+    border-radius: var(--radius-sm);
     font-size: 14px;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#current-player .icon, #timer .icon, #difficulty .icon {
+    color: var(--accent);
 }
 
 #current-player.check {
     background: var(--check);
+    border-color: rgba(255, 50, 50, 0.5);
     animation: pulse 0.8s ease-in-out infinite;
 }
 
@@ -92,17 +138,25 @@ h1 {
 }
 
 #difficulty select {
-    background: var(--bg-dark);
+    background: var(--bg-primary);
     color: var(--text-primary);
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
     font-size: 13px;
+    font-family: inherit;
     cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+#difficulty select:hover {
+    border-color: var(--accent);
 }
 
 #difficulty select:focus {
-    outline: 2px solid var(--accent);
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 #mode-selection {
@@ -112,54 +166,70 @@ h1 {
 
 #mode-selection button,
 #new-game-btn {
-    background: var(--bg-card-hover);
+    background: var(--bg-secondary);
     color: var(--text-primary);
-    border: 2px solid transparent;
-    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
     padding: 10px 18px;
     font-size: 14px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 #mode-selection button:hover,
 #new-game-btn:hover {
-    background: #333;
+    background: var(--bg-card-hover);
     border-color: var(--accent);
+    transform: translateY(-1px);
 }
 
 #mode-selection button.active {
     background: var(--accent);
-    color: var(--bg-dark);
+    color: #fff;
+    border-color: var(--accent);
     font-weight: 600;
 }
 
 #new-game-btn {
-    background: linear-gradient(135deg, #c9302c 0%, #8b0000 100%);
+    background: linear-gradient(135deg, var(--accent) 0%, #d63655 100%);
     border: none;
 }
 
 #new-game-btn:hover {
-    filter: brightness(1.15);
+    filter: brightness(1.1);
     border: none;
 }
 
-/* Game Layout */
+#new-game-btn .icon {
+    color: #fff;
+}
+
+/* ============================================
+   Game Layout
+   ============================================ */
+
 #game-container {
     width: 100%;
-    max-width: 900px;
+    max-width: 950px;
 }
 
 #game {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 20px;
+    gap: 24px;
     flex-wrap: wrap;
 }
 
-/* Chess Board */
+/* ============================================
+   Chess Board
+   ============================================ */
+
 #board {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -168,7 +238,10 @@ h1 {
     height: min(85vmin, 560px);
     border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: var(--shadow), 0 0 0 4px #3d2c1f;
+    box-shadow: 
+        var(--shadow-lg),
+        0 0 0 4px var(--board-border),
+        0 0 0 6px rgba(0, 0, 0, 0.3);
 }
 
 .square {
@@ -195,84 +268,64 @@ h1 {
     background-color: var(--selected) !important;
 }
 
-/* Valid move indicator */
+/* Valid move indicator - dot */
 .square.highlight::after {
     content: '';
     position: absolute;
-    width: 30%;
-    height: 30%;
+    width: 28%;
+    height: 28%;
     background: var(--valid-move);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(130, 230, 100, 0.4);
+}
+
+/* Capture indicator - ring */
+.square.capture::after {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    background: transparent;
+    border: 4px solid var(--capture);
     border-radius: 50%;
     pointer-events: none;
 }
 
-/* Capture indicator */
-.square.capture::after {
-    width: 90%;
-    height: 90%;
-    background: transparent;
-    border: 4px solid var(--capture);
-    border-radius: 50%;
-}
-
 /* ============================================
-   CHESS PIECES - Maximum Contrast
+   SVG Chess Pieces
    ============================================ */
 
 .piece {
-    font-size: clamp(32px, 8vw, 56px);
+    width: 85%;
+    height: 85%;
     cursor: grab;
     user-select: none;
-    line-height: 1;
     z-index: 10;
-    transition: transform 0.1s ease;
+    transition: transform 0.1s ease, filter 0.15s ease;
     touch-action: none;
-    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.piece svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.35));
 }
 
 .piece:hover {
-    transform: scale(1.15);
+    transform: scale(1.12);
     z-index: 100;
+}
+
+.piece:hover svg {
+    filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.45));
 }
 
 .piece:active {
     cursor: grabbing;
-}
-
-/* WHITE PIECES - Cream/Ivory with dark outline */
-.piece[data-piece="P"],
-.piece[data-piece="R"],
-.piece[data-piece="N"],
-.piece[data-piece="B"],
-.piece[data-piece="Q"],
-.piece[data-piece="K"] {
-    color: var(--white-piece);
-    -webkit-text-stroke: 1.5px var(--white-piece-stroke);
-    text-shadow: 
-        2px 2px 0 var(--white-piece-stroke),
-        -1px -1px 0 var(--white-piece-stroke),
-        1px -1px 0 var(--white-piece-stroke),
-        -1px 1px 0 var(--white-piece-stroke),
-        0 3px 6px rgba(0,0,0,0.4);
-    filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.5));
-}
-
-/* BLACK PIECES - Dark with white/gold outline */
-.piece[data-piece="p"],
-.piece[data-piece="r"],
-.piece[data-piece="n"],
-.piece[data-piece="b"],
-.piece[data-piece="q"],
-.piece[data-piece="k"] {
-    color: var(--black-piece);
-    -webkit-text-stroke: 1.5px var(--black-piece-stroke);
-    text-shadow: 
-        2px 2px 0 var(--black-piece-stroke),
-        -1px -1px 0 var(--black-piece-stroke),
-        1px -1px 0 var(--black-piece-stroke),
-        -1px 1px 0 var(--black-piece-stroke),
-        0 3px 6px rgba(0,0,0,0.3);
-    filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.3));
 }
 
 /* Dragging state */
@@ -280,48 +333,65 @@ h1 {
     position: fixed;
     z-index: 9999;
     pointer-events: none;
-    transform: translate(-50%, -50%) scale(1.2);
+    transform: translate(-50%, -50%) scale(1.25);
     cursor: grabbing;
     transition: none;
 }
 
-/* Move History */
+.piece.dragging svg {
+    filter: drop-shadow(4px 8px 12px rgba(0, 0, 0, 0.5));
+}
+
+/* ============================================
+   Move History Panel
+   ============================================ */
+
 #move-history {
     background: var(--bg-card);
     border-radius: var(--radius);
-    padding: 16px;
-    min-width: 200px;
+    padding: 18px;
+    min-width: 220px;
     max-width: 280px;
     max-height: 560px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 #move-history h2 {
-    margin: 0 0 12px 0;
-    font-size: 16px;
+    margin: 0 0 14px 0;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--text-primary);
     text-align: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #333;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#move-history h2 .icon {
+    color: var(--accent);
 }
 
 #history-list {
     list-style: decimal;
-    padding-left: 24px;
+    padding-left: 28px;
     margin: 0;
     overflow-y: auto;
     flex: 1;
     font-size: 13px;
     color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
 }
 
 #history-list li {
-    padding: 4px 0;
-    border-bottom: 1px solid #222;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 #history-list li:last-child {
@@ -334,31 +404,47 @@ h1 {
     width: 6px;
 }
 
+#history-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 #history-list::-webkit-scrollbar-thumb {
-    background: #444;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
 }
 
-/* Footer */
+#history-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
 footer {
     margin-top: auto;
-    padding: 16px;
+    padding: 20px;
     text-align: center;
-    font-size: 12px;
-    color: var(--text-secondary);
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 footer a {
     color: var(--accent);
     text-decoration: none;
     font-weight: 500;
+    transition: opacity 0.2s;
 }
 
 footer a:hover {
+    opacity: 0.8;
     text-decoration: underline;
 }
 
-/* Modals */
+/* ============================================
+   Modals
+   ============================================ */
+
 .modal {
     display: none;
     position: fixed;
@@ -366,74 +452,86 @@ footer a:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(10, 10, 20, 0.9);
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(6px);
 }
 
 .modal-content {
     background: var(--bg-card);
-    padding: 32px;
+    padding: 36px;
     border-radius: var(--radius);
     text-align: center;
-    max-width: 400px;
+    max-width: 420px;
     width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: var(--shadow-lg);
     animation: modalIn 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+    from { opacity: 0; transform: scale(0.92) translateY(-20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-content h2 {
     margin: 0 0 16px 0;
-    color: var(--accent);
-    font-size: 24px;
+    color: var(--text-primary);
+    font-size: 26px;
+    font-weight: 700;
 }
 
 .modal-content p {
     margin: 0 0 24px 0;
     color: var(--text-secondary);
-    font-size: 16px;
+    font-size: 15px;
 }
 
 /* Promotion Options */
 #promotion-options {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-top: 16px;
+    gap: 14px;
+    margin-top: 20px;
 }
 
 .promotion-piece {
-    font-size: 48px;
-    padding: 12px 16px;
-    background: var(--bg-card-hover);
-    border-radius: var(--radius);
+    width: 70px;
+    height: 70px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all 0.2s ease;
     border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.promotion-piece svg {
+    width: 100%;
+    height: 100%;
 }
 
 .promotion-piece:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
     border-color: var(--accent);
-    background: #333;
+    background: var(--bg-card-hover);
 }
 
 /* Primary Button */
 .btn-primary {
-    background: var(--accent);
-    color: var(--bg-dark);
+    background: linear-gradient(135deg, var(--accent) 0%, #d63655 100%);
+    color: #fff;
     border: none;
-    padding: 14px 32px;
+    padding: 14px 36px;
     font-size: 16px;
     font-weight: 600;
-    border-radius: var(--radius);
+    font-family: inherit;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -441,6 +539,7 @@ footer a:hover {
 .btn-primary:hover {
     filter: brightness(1.1);
     transform: translateY(-2px);
+    box-shadow: 0 4px 20px var(--accent-glow);
 }
 
 /* ============================================
@@ -449,28 +548,28 @@ footer a:hover {
 
 @media (max-width: 768px) {
     body {
-        padding: 12px;
-        gap: 12px;
+        padding: 14px;
+        gap: 14px;
     }
 
     h1 {
-        font-size: 22px;
+        font-size: 26px;
     }
 
     #game-info {
-        padding: 12px;
-        gap: 8px;
+        padding: 14px;
+        gap: 10px;
     }
 
     #current-player, #timer, #difficulty {
         padding: 8px 12px;
-        font-size: 12px;
+        font-size: 13px;
     }
 
     #mode-selection button,
     #new-game-btn {
         padding: 8px 14px;
-        font-size: 12px;
+        font-size: 13px;
     }
 
     #game {
@@ -481,10 +580,6 @@ footer a:hover {
     #board {
         width: min(95vw, 95vmin);
         height: min(95vw, 95vmin);
-    }
-
-    .piece {
-        font-size: clamp(28px, 10vw, 48px);
     }
 
     #move-history {
@@ -508,13 +603,10 @@ footer a:hover {
         flex: 1;
     }
 
-    .piece {
-        font-size: clamp(24px, 11vw, 44px);
-    }
-
     .promotion-piece {
-        font-size: 40px;
-        padding: 10px 14px;
+        width: 60px;
+        height: 60px;
+        padding: 8px;
     }
 }
 
@@ -523,10 +615,6 @@ footer a:hover {
     #board {
         width: min(70vh, 400px);
         height: min(70vh, 400px);
-    }
-
-    .piece {
-        font-size: clamp(20px, 6vh, 36px);
     }
 
     #move-history {

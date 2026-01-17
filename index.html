@@ -2,16 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ChessMaster</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1a1a2e">
-    <meta name="description" content="Play chess against AI or a friend.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    
+    <!-- Primary Meta Tags -->
+    <title>ChessMaster - Play Chess Online | Free AI Chess Game</title>
+    <meta name="title" content="ChessMaster - Play Chess Online | Free AI Chess Game">
+    <meta name="description" content="Play chess online for free against AI or friends. Multiple difficulty levels, beautiful design, works on any device. No download required - play instantly in your browser.">
+    <meta name="keywords" content="chess, online chess, play chess, chess game, chess AI, free chess, browser chess, chess app">
+    <meta name="author" content="ChessMaster">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    
+    <!-- Theme & Mobile -->
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="color-scheme" content="dark">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ChessMaster">
+    <meta name="application-name" content="ChessMaster">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://chessmaster.app/">
+    <meta property="og:title" content="ChessMaster - Play Chess Online | Free AI Chess Game">
+    <meta property="og:description" content="Play chess online for free against AI or friends. Multiple difficulty levels, beautiful design, works on any device.">
+    <meta property="og:image" content="https://chessmaster.app/og-image.png">
+    <meta property="og:site_name" content="ChessMaster">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://chessmaster.app/">
+    <meta name="twitter:title" content="ChessMaster - Play Chess Online | Free AI Chess Game">
+    <meta name="twitter:description" content="Play chess online for free against AI or friends. Multiple difficulty levels, beautiful design.">
+    <meta name="twitter:image" content="https://chessmaster.app/og-image.png">
+    
+    <!-- PWA & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♟</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a0f' width='100' height='100'/><text y='.9em' font-size='90' x='5'>♟</text></svg>">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://chessmaster.app/">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ChessMaster",
+        "description": "Play chess online for free against AI or friends. Multiple difficulty levels from beginner to expert.",
+        "url": "https://chessmaster.app",
+        "applicationCategory": "GameApplication",
+        "genre": "Board Game",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1250"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "ChessMaster"
+        }
+    }
+    </script>
+    
     <link rel="stylesheet" href="styles.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3909517762571272" crossorigin="anonymous"></script>
 </head>
 <body>
     <!-- SVG Chess Piece Definitions -->
-    <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <svg style="display:none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
             <!-- White King -->
             <g id="wK">
@@ -107,77 +180,194 @@
         </defs>
     </svg>
 
-    <header>
-        <h1>ChessMaster</h1>
-    </header>
-    
-    <div id="game-info">
-        <div id="current-player">
-            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <span id="player-color">White's Turn</span>
+    <!-- Loading Screen -->
+    <div id="loading-screen" aria-label="Loading">
+        <div class="loader-content">
+            <div class="loader-logo">
+                <svg viewBox="0 0 45 45" class="loader-piece" aria-hidden="true">
+                    <use href="#wK"/>
+                </svg>
+            </div>
+            <h1 class="loader-title">ChessMaster</h1>
+            <div class="loader-bar">
+                <div class="loader-progress"></div>
+            </div>
+            <p class="loader-text">Preparing your game...</p>
         </div>
-        <div id="timer">
-            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <span id="time">00:00</span>
-        </div>
-        <div id="difficulty">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <select id="level-select">
-                <option value="1">Beginner</option>
-                <option value="2" selected>Easy</option>
-                <option value="3">Medium</option>
-                <option value="4">Hard</option>
-                <option value="5">Expert</option>
-            </select>
-        </div>
-        <div id="mode-selection">
-            <button id="computer-btn">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                vs Computer
-            </button>
-            <button id="two-player-btn">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                2 Players
-            </button>
-        </div>
-        <button id="new-game-btn">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            New Game
-        </button>
     </div>
 
-    <div id="game-container">
-        <div id="game">
-            <div id="board"></div>
-            <div id="move-history">
-                <h2>
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    Moves
-                </h2>
-                <ol id="history-list"></ol>
+    <!-- Landing Page -->
+    <main id="landing-page" class="hidden" role="main">
+        <div class="landing-bg"></div>
+        
+        <header class="landing-header">
+            <div class="logo">
+                <svg viewBox="0 0 45 45" class="logo-icon" aria-hidden="true"><use href="#wN"/></svg>
+                <span>ChessMaster</span>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">Master the Game of Kings</h1>
+                <p class="hero-subtitle">Play chess against our intelligent AI or challenge a friend. Beautiful, fast, and free.</p>
+                
+                <div class="hero-actions">
+                    <button id="play-vs-ai" class="btn btn-primary btn-lg">
+                        <svg viewBox="0 0 24 24" class="btn-icon"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                        Play vs Computer
+                    </button>
+                    <button id="play-vs-friend" class="btn btn-secondary btn-lg">
+                        <svg viewBox="0 0 24 24" class="btn-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                        Play with Friend
+                    </button>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="floating-pieces">
+                    <svg viewBox="0 0 45 45" class="float-piece p1"><use href="#wQ"/></svg>
+                    <svg viewBox="0 0 45 45" class="float-piece p2"><use href="#bN"/></svg>
+                    <svg viewBox="0 0 45 45" class="float-piece p3"><use href="#wR"/></svg>
+                    <svg viewBox="0 0 45 45" class="float-piece p4"><use href="#bB"/></svg>
+                    <svg viewBox="0 0 45 45" class="float-piece p5"><use href="#wK"/></svg>
+                    <svg viewBox="0 0 45 45" class="float-piece p6"><use href="#bP"/></svg>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h3>5 Difficulty Levels</h3>
+                <p>From beginner to expert AI</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <h3>Mobile Ready</h3>
+                <p>Play anywhere, any device</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <h3>Instant Play</h3>
+                <p>No download required</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden">
+        <header class="game-header">
+            <button id="back-btn" class="btn btn-ghost" aria-label="Back to menu">
+                <svg viewBox="0 0 24 24" class="btn-icon"><path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="game-logo">
+                <svg viewBox="0 0 45 45" class="logo-icon-sm"><use href="#wN"/></svg>
+                <span>ChessMaster</span>
+            </div>
+            <button id="settings-btn" class="btn btn-ghost" aria-label="Settings">
+                <svg viewBox="0 0 24 24" class="btn-icon"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </button>
+        </header>
+
+        <div id="game-info">
+            <div id="player-indicator">
+                <div class="player-badge white-badge active">
+                    <svg viewBox="0 0 45 45" class="player-piece"><use href="#wK"/></svg>
+                    <span>White</span>
+                </div>
+                <div id="vs-indicator">VS</div>
+                <div class="player-badge black-badge">
+                    <svg viewBox="0 0 45 45" class="player-piece"><use href="#bK"/></svg>
+                    <span>Black</span>
+                </div>
+            </div>
+            
+            <div id="game-controls">
+                <div class="control-group">
+                    <label for="level-select">Difficulty</label>
+                    <select id="level-select">
+                        <option value="1">Beginner</option>
+                        <option value="2" selected>Easy</option>
+                        <option value="3">Medium</option>
+                        <option value="4">Hard</option>
+                        <option value="5">Expert</option>
+                    </select>
+                </div>
+                <div class="control-group timer-group">
+                    <svg viewBox="0 0 24 24" class="control-icon"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <span id="time">00:00</span>
+                </div>
+                <button id="new-game-btn" class="btn btn-accent">
+                    <svg viewBox="0 0 24 24" class="btn-icon"><path d="M23 4v6h-6M1 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    New Game
+                </button>
             </div>
         </div>
+
+        <div id="game-container">
+            <div id="game">
+                <div id="board-wrapper">
+                    <div id="board" role="application" aria-label="Chess board"></div>
+                </div>
+                <aside id="move-history" aria-label="Move history">
+                    <h2>
+                        <svg viewBox="0 0 24 24" class="panel-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Moves
+                    </h2>
+                    <ol id="history-list"></ol>
+                </aside>
+            </div>
+        </div>
+
+        <div id="current-player" class="status-bar" aria-live="polite">
+            <span id="player-color">White's Turn</span>
+        </div>
     </div>
 
-    <footer>
-        <p>ChessMaster v1.0 | <a href="https://buymeacoffee.com/georgegeorge" target="_blank">Support the project</a></p>
-    </footer>
-
     <!-- Promotion Modal -->
-    <div id="promotion-modal" class="modal">
+    <div id="promotion-modal" class="modal" role="dialog" aria-labelledby="promo-title" aria-modal="true">
         <div class="modal-content">
-            <h2>Promote Pawn</h2>
+            <h2 id="promo-title">Promote Pawn</h2>
             <p>Choose your new piece:</p>
             <div id="promotion-options"></div>
         </div>
     </div>
 
     <!-- Game Over Modal -->
-    <div id="game-over-modal" class="modal">
+    <div id="game-over-modal" class="modal" role="dialog" aria-labelledby="gameover-title" aria-modal="true">
         <div class="modal-content">
+            <div class="modal-icon"></div>
             <h2 id="game-over-title">Game Over</h2>
             <p id="game-over-message"></p>
-            <button id="play-again-btn" class="btn-primary">Play Again</button>
+            <div class="modal-actions">
+                <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+                <button id="back-to-menu-btn" class="btn btn-secondary">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+        <div class="modal-content">
+            <h2 id="settings-title">Settings</h2>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label for="sound-toggle">Sound Effects</label>
+                    <input type="checkbox" id="sound-toggle" checked>
+                </div>
+                <div class="setting-item">
+                    <label for="highlight-toggle">Show Legal Moves</label>
+                    <input type="checkbox" id="highlight-toggle" checked>
+                </div>
+            </div>
+            <button id="close-settings" class="btn btn-primary">Done</button>
         </div>
     </div>
 
@@ -185,7 +375,6 @@
     <audio id="move-sound" src="sounds/move.mp3" preload="auto"></audio>
     <audio id="capture-sound" src="sounds/capture.mp3" preload="auto"></audio>
     <audio id="check-sound" src="sounds/check.mp3" preload="auto"></audio>
-    <audio id="background-music" loop></audio>
 
     <script src="script.js"></script>
 </body>

@@ -1,17 +1,32 @@
-// script.js
+// ============================================
+// ChessMaster - Professional Chess Web App
+// ============================================
 
 // ============================
-// Global Variables and Constants
+// Page Elements
+// ============================
+
+const loadingScreen = document.getElementById('loading-screen');
+const landingPage = document.getElementById('landing-page');
+const gameScreen = document.getElementById('game-screen');
+const playVsAI = document.getElementById('play-vs-ai');
+const playVsFriend = document.getElementById('play-vs-friend');
+const backBtn = document.getElementById('back-btn');
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const closeSettings = document.getElementById('close-settings');
+const backToMenuBtn = document.getElementById('back-to-menu-btn');
+
+// ============================
+// Game Elements
 // ============================
 
 const boardElement = document.getElementById('board');
 const historyList = document.getElementById('history-list');
-let playerColorSpan = document.getElementById('player-color');
+const playerColorSpan = document.getElementById('player-color');
 const currentPlayerDiv = document.getElementById('current-player');
 const timeSpan = document.getElementById('time');
 const levelSelect = document.getElementById('level-select');
-const computerBtn = document.getElementById('computer-btn');
-const twoPlayerBtn = document.getElementById('two-player-btn');
 const newGameBtn = document.getElementById('new-game-btn');
 const promotionModal = document.getElementById('promotion-modal');
 const promotionOptions = document.getElementById('promotion-options');
@@ -22,7 +37,18 @@ const playAgainBtn = document.getElementById('play-again-btn');
 const moveSound = document.getElementById('move-sound');
 const captureSound = document.getElementById('capture-sound');
 const checkSound = document.getElementById('check-sound');
-const backgroundMusic = document.getElementById('background-music');
+
+// Player badges
+const whiteBadge = document.querySelector('.white-badge');
+const blackBadge = document.querySelector('.black-badge');
+
+// Settings
+const soundToggle = document.getElementById('sound-toggle');
+const highlightToggle = document.getElementById('highlight-toggle');
+
+// ============================
+// Game State
+// ============================
 
 let board = [];
 let selectedPiece = null;
@@ -30,7 +56,7 @@ let currentPlayer = 'white';
 let moveHistory = [];
 let timerInterval = null;
 let elapsedTime = 0;
-let gameMode = 'two-player'; // 'two-player' or 'one-player'
+let gameMode = 'one-player';
 let castlingRights = {
     white: { kingside: true, queenside: true },
     black: { kingside: true, queenside: true }
@@ -41,9 +67,86 @@ let fullMoveNumber = 1;
 let lastMove = null;
 let gameOver = false;
 
-// Drag & Drop State
+// Drag & Drop
 let isDragging = false;
 let draggedPiece = null;
+
+// Settings
+let soundEnabled = true;
+let showLegalMoves = true;
+
+// ============================
+// App Initialization
+// ============================
+
+function initApp() {
+    // Simulate loading
+    setTimeout(() => {
+        loadingScreen.classList.add('fade-out');
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            landingPage.classList.remove('hidden');
+        }, 500);
+    }, 1800);
+    
+    setupEventListeners();
+}
+
+function setupEventListeners() {
+    // Landing page
+    playVsAI.addEventListener('click', () => startGame('one-player'));
+    playVsFriend.addEventListener('click', () => startGame('two-player'));
+    
+    // Navigation
+    backBtn.addEventListener('click', showLanding);
+    backToMenuBtn?.addEventListener('click', showLanding);
+    
+    // Settings
+    settingsBtn.addEventListener('click', () => settingsModal.style.display = 'flex');
+    closeSettings.addEventListener('click', () => settingsModal.style.display = 'none');
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) settingsModal.style.display = 'none';
+    });
+    
+    soundToggle.addEventListener('change', (e) => soundEnabled = e.target.checked);
+    highlightToggle.addEventListener('change', (e) => showLegalMoves = e.target.checked);
+    
+    // Game controls
+    newGameBtn.addEventListener('click', initGame);
+    playAgainBtn.addEventListener('click', () => {
+        gameOverModal.style.display = 'none';
+        initGame();
+    });
+    
+    // Board
+    boardElement.addEventListener('click', handleSquareClick);
+    
+    // Promotion modal
+    promotionModal.addEventListener('click', (e) => {
+        if (e.target === promotionModal) {
+            promotionModal.style.display = 'none';
+            deselectPiece();
+            renderBoard();
+        }
+    });
+    
+    // Prevent context menu on long press (mobile)
+    boardElement.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+function startGame(mode) {
+    gameMode = mode;
+    landingPage.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    initGame();
+}
+
+function showLanding() {
+    clearInterval(timerInterval);
+    gameScreen.classList.add('hidden');
+    gameOverModal.style.display = 'none';
+    landingPage.classList.remove('hidden');
+}
 
 // ============================
 // Game Initialization
@@ -64,8 +167,6 @@ function initGame() {
     currentPlayer = 'white';
     moveHistory = [];
     historyList.innerHTML = '';
-    playerColorSpan.textContent = "White's Turn";
-    currentPlayerDiv.classList.remove('check');
     elapsedTime = 0;
     fullMoveNumber = 1;
     halfMoveClock = 0;
@@ -73,6 +174,9 @@ function initGame() {
     gameOver = false;
     selectedPiece = null;
     gameOverModal.style.display = 'none';
+    
+    updatePlayerIndicator();
+    updateStatusBar();
     
     clearInterval(timerInterval);
     timerInterval = setInterval(updateTimer, 1000);
@@ -87,7 +191,26 @@ function initGame() {
 }
 
 // ============================
-// Rendering the Board
+// UI Updates
+// ============================
+
+function updatePlayerIndicator() {
+    if (currentPlayer === 'white') {
+        whiteBadge?.classList.add('active');
+        blackBadge?.classList.remove('active');
+    } else {
+        whiteBadge?.classList.remove('active');
+        blackBadge?.classList.add('active');
+    }
+}
+
+function updateStatusBar() {
+    playerColorSpan.textContent = currentPlayer === 'white' ? "White's Turn" : "Black's Turn";
+    currentPlayerDiv.classList.remove('check');
+}
+
+// ============================
+// Rendering
 // ============================
 
 function renderBoard() {
@@ -102,11 +225,7 @@ function renderBoard() {
             square.dataset.row = row;
             square.dataset.col = col;
 
-            if ((row + col) % 2 === 0) {
-                square.classList.add('light');
-            } else {
-                square.classList.add('dark');
-            }
+            square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
 
             const piece = board[row][col];
             if (piece !== '') {
@@ -134,12 +253,7 @@ function renderBoard() {
     }
 }
 
-// ============================
-// Helper Functions
-// ============================
-
 function getPieceSVG(piece) {
-    // Map piece notation to SVG sprite IDs
     const svgIds = {
         'P': 'wP', 'R': 'wR', 'N': 'wN', 'B': 'wB', 'Q': 'wQ', 'K': 'wK',
         'p': 'bP', 'r': 'bR', 'n': 'bN', 'b': 'bB', 'q': 'bQ', 'k': 'bK'
@@ -149,14 +263,9 @@ function getPieceSVG(piece) {
     return `<svg viewBox="0 0 45 45"><use href="#${id}"/></svg>`;
 }
 
-function getPieceSymbol(piece) {
-    // Text symbols for algebraic notation in history
-    const symbols = {
-        'P': '', 'R': 'R', 'N': 'N', 'B': 'B', 'Q': 'Q', 'K': 'K',
-        'p': '', 'r': 'R', 'n': 'N', 'b': 'B', 'q': 'Q', 'k': 'K'
-    };
-    return symbols[piece] || '';
-}
+// ============================
+// Helper Functions
+// ============================
 
 function isUpperCase(char) {
     return char === char.toUpperCase();
@@ -176,8 +285,14 @@ function isInBounds(row, col) {
     return row >= 0 && row < 8 && col >= 0 && col < 8;
 }
 
+function playSound(sound) {
+    if (!soundEnabled) return;
+    sound.currentTime = 0;
+    sound.play().catch(() => {});
+}
+
 // ============================
-// Drag & Drop Handling
+// Drag & Drop
 // ============================
 
 function onPiecePointerDown(e) {
@@ -312,23 +427,23 @@ function handleSquareClick(e) {
     }
 }
 
-boardElement.addEventListener('click', handleSquareClick);
-
 function selectPiece(row, col, piece) {
     deselectPiece();
     selectedPiece = { row, col, piece };
     highlightSquare(row, col, 'selected');
 
-    const moves = getValidMoves(row, col, piece);
-    moves.forEach(move => {
-        const target = board[move.toRow][move.toCol];
-        if (target !== '' || (move.special === 'en-passant')) {
-            highlightSquare(move.toRow, move.toCol, 'highlight');
-            highlightSquare(move.toRow, move.toCol, 'capture');
-        } else {
-            highlightSquare(move.toRow, move.toCol, 'highlight');
-        }
-    });
+    if (showLegalMoves) {
+        const moves = getValidMoves(row, col, piece);
+        moves.forEach(move => {
+            const target = board[move.toRow][move.toCol];
+            if (target !== '' || move.special === 'en-passant') {
+                highlightSquare(move.toRow, move.toCol, 'highlight');
+                highlightSquare(move.toRow, move.toCol, 'capture');
+            } else {
+                highlightSquare(move.toRow, move.toCol, 'highlight');
+            }
+        });
+    }
 }
 
 function deselectPiece() {
@@ -559,20 +674,21 @@ function makeMove(move) {
         }
     }
 
+    // Play sounds
     if (move.capture || move.special === 'en-passant') {
-        captureSound.currentTime = 0;
-        captureSound.play().catch(() => {});
+        playSound(captureSound);
     } else {
-        moveSound.currentTime = 0;
-        moveSound.play().catch(() => {});
+        playSound(moveSound);
     }
 
+    // Update half-move clock
     if (pieceType === 'P' || capturedPiece !== '') {
         halfMoveClock = 0;
     } else {
         halfMoveClock++;
     }
 
+    // Execute move
     board[move.toRow][move.toCol] = piece;
     board[move.fromRow][move.fromCol] = '';
 
@@ -609,6 +725,7 @@ function makeMove(move) {
     updateCastlingRights(move, piece, capturedPiece);
     lastMove = move;
 
+    // Add to history
     const moveNotation = generateMoveNotation(move);
     moveHistory.push(moveNotation);
     const li = document.createElement('li');
@@ -624,14 +741,13 @@ function makeMove(move) {
 
     if (currentPlayer === 'white') fullMoveNumber++;
 
+    // AI move
     if (gameMode === 'one-player' && currentPlayer === 'black' && !gameOver) {
         boardElement.style.pointerEvents = 'none';
         boardElement.style.opacity = '0.7';
-        playerColorSpan.textContent = '🤔 Thinking...';
+        playerColorSpan.textContent = 'Thinking...';
         
-        setTimeout(() => {
-            computerMove();
-        }, 300);
+        setTimeout(computerMove, 350);
     }
 }
 
@@ -695,18 +811,10 @@ function promptPromotion(move) {
     });
 }
 
-promotionModal.addEventListener('click', function(e) {
-    if (e.target === promotionModal) {
-        promotionModal.style.display = 'none';
-        deselectPiece();
-        renderBoard();
-    }
-});
-
 function switchPlayer() {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-    playerColorSpan.textContent = currentPlayer === 'white' ? "White's Turn" : "Black's Turn";
-    currentPlayerDiv.classList.remove('check');
+    updatePlayerIndicator();
+    updateStatusBar();
 }
 
 // ============================
@@ -732,8 +840,7 @@ function checkGameStatus() {
     }
     if (isInCheck(currentPlayer)) {
         currentPlayerDiv.classList.add('check');
-        checkSound.currentTime = 0;
-        checkSound.play().catch(() => {});
+        playSound(checkSound);
     } else {
         currentPlayerDiv.classList.remove('check');
     }
@@ -813,16 +920,16 @@ function endGame(result, winner) {
     boardElement.style.opacity = '1';
     
     if (result === 'checkmate') {
-        gameOverTitle.textContent = '👑 Checkmate!';
+        gameOverTitle.textContent = 'Checkmate!';
         gameOverMessage.textContent = winner === 'white' ? 'White wins the game!' : 'Black wins the game!';
     } else if (result === 'stalemate') {
-        gameOverTitle.textContent = '🤝 Stalemate';
+        gameOverTitle.textContent = 'Stalemate';
         gameOverMessage.textContent = 'The game is a draw.';
     } else if (result === 'fifty-move') {
-        gameOverTitle.textContent = '🤝 Draw';
+        gameOverTitle.textContent = 'Draw';
         gameOverMessage.textContent = 'Draw by 50-move rule.';
     } else if (result === 'insufficient') {
-        gameOverTitle.textContent = '🤝 Draw';
+        gameOverTitle.textContent = 'Draw';
         gameOverMessage.textContent = 'Insufficient material to checkmate.';
     }
     
@@ -837,7 +944,7 @@ function updateTimer() {
 }
 
 // ============================
-// AI (Computer) Logic
+// AI Logic
 // ============================
 
 function computerMove() {
@@ -1058,34 +1165,7 @@ function getPieceValue(piece) {
 }
 
 // ============================
-// Controls
+// Start Application
 // ============================
 
-newGameBtn.addEventListener('click', () => initGame());
-
-computerBtn.addEventListener('click', () => {
-    gameMode = 'one-player';
-    computerBtn.classList.add('active');
-    twoPlayerBtn.classList.remove('active');
-    initGame();
-});
-
-twoPlayerBtn.addEventListener('click', () => {
-    gameMode = 'two-player';
-    twoPlayerBtn.classList.add('active');
-    computerBtn.classList.remove('active');
-    initGame();
-});
-
-twoPlayerBtn.classList.add('active');
-
-playAgainBtn.addEventListener('click', () => {
-    gameOverModal.style.display = 'none';
-    initGame();
-});
-
-// ============================
-// Start
-// ============================
-
-initGame();
+document.addEventListener('DOMContentLoaded', initApp);

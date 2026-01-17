@@ -1,0 +1,63 @@
+{
+    "name": "ChessMaster - Play Chess Online",
+    "short_name": "ChessMaster",
+    "description": "Play chess online for free against AI or friends. Multiple difficulty levels, beautiful design, works on any device.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0f",
+    "theme_color": "#0a0a0f",
+    "orientation": "any",
+    "categories": ["games", "entertainment", "education"],
+    "lang": "en",
+    "dir": "ltr",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0a0f' width='512' height='512' rx='64'/><text y='380' x='128' font-size='320' fill='white'>♞</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230a0a0f' width='192' height='192' rx='24'/><text y='145' x='48' font-size='120' fill='white'>♞</text></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1280 720'><rect fill='%230a0a0f' width='1280' height='720'/><text y='400' x='400' font-size='120' fill='white'>ChessMaster</text></svg>",
+            "sizes": "1280x720",
+            "type": "image/svg+xml",
+            "form_factor": "wide",
+            "label": "ChessMaster gameplay"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 1334'><rect fill='%230a0a0f' width='750' height='1334'/><text y='700' x='150' font-size='80' fill='white'>ChessMaster</text></svg>",
+            "sizes": "750x1334",
+            "type": "image/svg+xml",
+            "form_factor": "narrow",
+            "label": "ChessMaster mobile"
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false,
+    "shortcuts": [
+        {
+            "name": "Play vs Computer",
+            "short_name": "vs AI",
+            "description": "Start a new game against the computer",
+            "url": "/?mode=ai"
+        },
+        {
+            "name": "Play with Friend",
+            "short_name": "2 Players",
+            "description": "Start a new game with a friend",
+            "url": "/?mode=friend"
+        }
+    ],
+    "edge_side_panel": {
+        "preferred_width": 480
+    }
+}
